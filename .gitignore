@@ -1,4 +1,6 @@
-dist/
 code_examples/*.hs
+
+dist/
+*stack*
 
 .vscode/
