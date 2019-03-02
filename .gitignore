@@ -1,0 +1,4 @@
+dist/
+code_examples/*.hs
+
+.vscode/
