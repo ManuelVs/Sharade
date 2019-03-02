@@ -57,8 +57,13 @@ executable Sharade
   -- other-extensions:    
   
   -- Other library packages from which modules are imported.
-  build-depends:       base >=4.9 && <4.10, parsec, parsec-numbers
+  build-depends:       base >=4.9 && <5.0, parsec, parsec-numbers
   
+  Exposed-Modules:     Sharade.Parser.Parser,
+                       Sharade.Parser.Syntax,
+                       Sharade.Translator.Eval
+  Other-Modules:
+
   -- Directories containing source files.
   hs-source-dirs:      src
   
