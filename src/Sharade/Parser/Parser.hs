@@ -51,11 +51,10 @@ module Sharade.Parser.Parser (
   ------------------------------- END OF 'UTILS' -------------------------------
   ------------------------------------------------------------------------------
 
-  createExpr "?" lexp rexp = Ch lexp rexp
-  createExpr op lexp rexp = (AFun (AFun (HDf prefixNot) lexp) rexp) where
+  createExpr op lexp rexp = (AFun (AFun (Var prefixNot) lexp) rexp) where
     prefixNot = "(" ++ op ++ ")"
 
-  expr :: Parser Expr
+  expr :: Parser SExpr
   expr =
     do
       reserved "choose"
@@ -73,13 +72,13 @@ module Sharade.Parser.Parser (
     do
       fexp
 
-  fexp :: Parser Expr
+  fexp :: Parser SExpr
   fexp =
     do
       fs <- many1 aexp
       return (foldl1 AFun fs)
 
-  aexp :: Parser Expr
+  aexp :: Parser SExpr
   aexp =
     do
       r <- num
@@ -88,27 +87,27 @@ module Sharade.Parser.Parser (
     <%>
     do
       i <- identifier
-      return (MDf i)
+      return (Var i)
 
   num :: Parser Double
   num = floating <%> floating2 False
   
-  bind :: Parser Binding
+  bind :: Parser SBinding
   bind = do
     i <- identifier
     reserved "="
     e <- expr
     return (B i e)
 
-  funDecl :: Parser Decl
+  funDecl :: Parser FDecl
   funDecl = do
     f <- identifier
     as <- many identifier
     reserved "="
     e <- expr
-    return (SDecl f as e)
+    return (FDecl f as e)
 
-  program :: Parser [Decl]
+  program :: Parser [FDecl]
   program =
     do
       d <- funDecl
@@ -125,8 +124,8 @@ module Sharade.Parser.Parser (
     eof
     return r
 
-  parseExpr :: String -> Either ParseError Expr
+  parseExpr :: String -> Either ParseError SExpr
   parseExpr s = parse (contents expr) "" s
 
-  parseDecl :: String -> Either ParseError Decl
+  parseDecl :: String -> Either ParseError FDecl
   parseDecl s = parse (contents funDecl) "" s
