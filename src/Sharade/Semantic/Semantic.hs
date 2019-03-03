@@ -13,9 +13,9 @@ module Sharade.Semantic.Semantic where
   data TFDecl = TFDecl Type String [String] TExpr deriving Show
 
   data Type =
-    Any          | -- Any type
-    SType String | -- Simple type. "Int"
-    LType Type   | -- List type
-    FType Type Type-- Function type. "Int -> Int -> [Int]"
+    Any          |  -- Any type
+    SType String |  -- Simple type. "Int"
+    LType Type   |  -- List type
+    FType Type Type -- Function type. "Int -> Int -> [Int]"
     deriving (Eq, Show)
   
