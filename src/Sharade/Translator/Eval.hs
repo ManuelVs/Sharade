@@ -9,7 +9,7 @@ module Sharade.Translator.Eval (
   right _ = error "Not a right expression"
 
   translateExpr :: SExpr -> String
-  translateExpr (AFun le re) =
+  translateExpr (Fun le re) =
     translateExpr le ++
     " (" ++ translateExpr re ++ ")"
   

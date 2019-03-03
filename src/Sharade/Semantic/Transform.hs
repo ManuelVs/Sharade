@@ -1,4 +1,4 @@
-module Sharing.Semantic.Transform where
+module Sharade.Semantic.Transform where
 
   import Control.Monad
   import qualified Data.Map as Map

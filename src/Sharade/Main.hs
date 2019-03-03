@@ -1,10 +1,11 @@
 import System.IO
 import System.Environment
 
-import Sharade.Translator.Eval
-import Sharade.Parser.Parser
+import qualified Sharade.Parser.Parser as Parser
+import qualified Sharade.Semantic.Transform as Transform
+import qualified Sharade.Translator.Eval as Eval
 
-parseProgram pr = sequence $ map parseDecl (filter (not . null) $ lines pr)
+parseProgram pr = sequence $ map Parser.parseDecl (filter (not . null) $ lines pr)
 
 main = do
   args <- getArgs
@@ -18,7 +19,7 @@ main = do
     Left l -> print l
     Right r -> do
       putStrLn "Transpiling..."
-      let declarations = map translateDecl r
+      let declarations = map Eval.translateDecl r
       
       fw <- openFile wpath WriteMode
 

@@ -51,7 +51,7 @@ module Sharade.Parser.Parser (
   ------------------------------- END OF 'UTILS' -------------------------------
   ------------------------------------------------------------------------------
 
-  createExpr op lexp rexp = (AFun (AFun (Var prefixNot) lexp) rexp) where
+  createExpr op lexp rexp = (Fun (Fun (Var prefixNot) lexp) rexp) where
     prefixNot = "(" ++ op ++ ")"
 
   expr :: Parser SExpr
@@ -76,7 +76,7 @@ module Sharade.Parser.Parser (
   fexp =
     do
       fs <- many1 aexp
-      return (foldl1 AFun fs)
+      return (foldl1 Fun fs)
 
   aexp :: Parser SExpr
   aexp =
