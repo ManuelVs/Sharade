@@ -3,4 +3,4 @@ add a b = a + b
 
 f a = choose b = 2 ? 3 in add a b
 
-g a = 2 + 3
+g a = a 2 3
