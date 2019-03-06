@@ -1,12 +1,16 @@
 import System.IO
 import System.Environment
 
-import qualified Sharade.Parser.Parser as Parser
-import qualified Sharade.Semantic.Transform as Transform
-import qualified Sharade.Translator.Eval as Eval
+import Text.ParserCombinators.Parsec
 
+import qualified Sharade.Parser.Parser as Parser
+import qualified Sharade.Parser.Syntax as Syntax
+import qualified Sharade.Translator.Translator as Translator
+
+parseProgram :: String -> Either ParseError [Syntax.FDecl]
 parseProgram pr = sequence $ map Parser.parseDecl (filter (not . null) $ lines pr)
 
+main :: IO ()
 main = do
   args <- getArgs
   let path = head args
@@ -17,16 +21,16 @@ main = do
   
   case parseProgram pr of
     Left l -> print l
-    Right r -> do
-      putStrLn "Transpiling..."
-      let declarations = map Eval.translateDecl r
-      
-      fw <- openFile wpath WriteMode
+    Right r -> case Translator.translateModule r of
+      Left l -> print l
+      Right haskellProgram -> do
+        fw <- openFile wpath WriteMode
 
-      hPutStrLn fw "import Control.Monad"
-      hPutStrLn fw "import Control.Monad.Sharing"
-      mapM_ (hPutStrLn fw) declarations
+        hPutStrLn fw "import Control.Monad"
+        hPutStrLn fw "import Control.Monad.Sharing"
+        hPutStr fw haskellProgram
 
-      hClose fw
+        hClose fw
+
   hClose fr
   putStrLn "Done."

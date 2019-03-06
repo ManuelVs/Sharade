@@ -51,25 +51,30 @@ executable Sharade
   main-is:             Sharade/Main.hs
   
   -- Modules included in this executable, other than Main.
-  other-modules:       Sharade.Parser.Parser,
+  other-modules:       Sharade.Parser.Lexer,
                        Sharade.Parser.Syntax,
-                       Sharade.Semantic.Semantic,
-                       Sharade.Semantic.Transform,
-                       Sharade.Semantic.Internal.Utils,
-                       Sharade.Translator.Eval
+                       Sharade.Parser.Parser,
+                       Sharade.Translator.Semantic.Substitutable,
+                       Sharade.Translator.Semantic.Type,
+                       Sharade.Translator.Semantic.TypeEnv,
+                       Sharade.Translator.Semantic.TypesEvaluation,
+                       Sharade.Translator.Semantic.Internal.Utils,
+                       Sharade.Translator.Translator
   
   -- LANGUAGE extensions used by modules in this package.
   -- other-extensions:    
   
   -- Other library packages from which modules are imported.
-  build-depends:       base >=4.9 && <5.0, parsec, parsec-numbers, containers
+  build-depends:       base >=4.9 && <5.0, mtl, parsec-numbers, parsec, containers
   
-  Exposed-Modules:     Sharade.Parser.Parser,
+  Exposed-Modules:     Sharade.Parser.Lexer,
                        Sharade.Parser.Syntax,
-                       Sharade.Semantic.Semantic,
-                       Sharade.Semantic.Transform,
-                       Sharade.Translator.Eval
-  Other-Modules:
+                       Sharade.Parser.Parser,
+                       Sharade.Translator.Semantic.Substitutable,
+                       Sharade.Translator.Semantic.Type,
+                       Sharade.Translator.Semantic.TypeEnv,
+                       Sharade.Translator.Semantic.TypesEvaluation,
+                       Sharade.Translator.Translator
 
   -- Directories containing source files.
   hs-source-dirs:      src

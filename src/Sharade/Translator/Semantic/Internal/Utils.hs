@@ -1,4 +1,4 @@
-module Sharade.Semantic.Internal.Utils where
+module Sharade.Translator.Semantic.Internal.Utils where
 
   import Data.List
 

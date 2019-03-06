@@ -1,12 +1,12 @@
 module Sharade.Parser.Parser (
-  parseDecl, parseExpr
+  parseDecl, parseExpr, parseModule
 )where
 
   import Text.ParserCombinators.Parsec
   import Text.ParserCombinators.Parsec.Number
 
   import Sharade.Parser.Lexer
-  import Sharade.Parser.Syntax  
+  import Sharade.Parser.Syntax
   
   createExpr op lexp rexp = (App (App (Var prefixNot) lexp) rexp) where
     prefixNot = "(" ++ op ++ ")"
