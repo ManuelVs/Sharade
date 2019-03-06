@@ -7,8 +7,6 @@ module Sharade.Parser.Parser (
 
   import Sharade.Parser.Lexer
   import Sharade.Parser.Syntax  
-
-  type FDecl = (String, Expr)
   
   createExpr op lexp rexp = (App (App (Var prefixNot) lexp) rexp) where
     prefixNot = "(" ++ op ++ ")"
