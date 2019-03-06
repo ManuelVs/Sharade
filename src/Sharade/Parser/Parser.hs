@@ -2,102 +2,85 @@ module Sharade.Parser.Parser (
   parseDecl, parseExpr
 )where
 
-  import Sharade.Parser.Syntax
-
   import Text.ParserCombinators.Parsec
   import Text.ParserCombinators.Parsec.Number
-  import qualified Text.ParserCombinators.Parsec.Token as Tok
 
-  langDef :: Tok.LanguageDef ()
-  langDef = Tok.LanguageDef
-    { Tok.commentStart    = "{-"
-    , Tok.commentEnd      = "-}"
-    , Tok.commentLine     = "#"
-    , Tok.nestedComments  = True
-    , Tok.identStart      = letter
-    , Tok.identLetter     = alphaNum <|> oneOf "_'"
-    , Tok.opStart         = oneOf ":!#$%&*+./<=>?@\\^|-~"
-    , Tok.opLetter        = oneOf ":!#$%&*+./<=>?@\\^|-~"
-    , Tok.reservedNames   = ["choose", "in"]
-    , Tok.reservedOpNames = ["="]
-    , Tok.caseSensitive   = True
-    }
+  import Sharade.Parser.Lexer
+  import Sharade.Parser.Syntax  
 
-  lexer :: Tok.TokenParser ()
-  lexer = Tok.makeTokenParser langDef
-
-  parens :: Parser a -> Parser a
-  parens = Tok.parens lexer
-
-  reserved :: String -> Parser ()
-  reserved = Tok.reserved lexer
-
-  semiSep :: Parser a -> Parser [a]
-  semiSep = Tok.semiSep lexer
-
-  operator :: Parser String
-  operator = Tok.operator lexer
-
-  identifier :: Parser String
-  identifier  = Tok.identifier lexer
-
-  semiColon :: Parser String
-  semiColon = Tok.semi lexer
-
-  (<%>) :: Parser a -> Parser a -> Parser a
-  infixr 1 <%>
-  a <%> b = (try a) <|> b
-  ------------------------------------------------------------------------------
-  ------------------------------- END OF 'UTILS' -------------------------------
-  ------------------------------------------------------------------------------
-
-  createExpr op lexp rexp = (Fun (Fun (Var prefixNot) lexp) rexp) where
+  type FDecl = (String, Expr)
+  
+  createExpr op lexp rexp = (App (App (Var prefixNot) lexp) rexp) where
     prefixNot = "(" ++ op ++ ")"
 
-  expr :: Parser SExpr
-  expr =
-    do
-      reserved "choose"
-      b <- bind
-      reserved "in"
-      e <- expr
-      return (Bind b e)
-    <%>
-    do
-      lexp <- fexp
-      op <- operator
-      rexp <- expr
-      return $ createExpr op lexp rexp
-    <%>
-    do
-      fexp
 
-  fexp :: Parser SExpr
-  fexp =
-    do
-      fs <- many1 aexp
-      return (foldl1 Fun fs)
-
-  aexp :: Parser SExpr
-  aexp =
-    do
-      r <- num
-      spaces
-      return (Lit $ show r)
-    <%>
-    do
-      i <- identifier
-      return (Var i)
-
-  num :: Parser Double
-  num = floating <%> floating2 False
+  num :: Parser Expr
+  num = do
+    r <- floating <%> floating2 False
+    spaces
+    return (Lit $ show r)
   
-  bind :: Parser SBinding
-  bind = do
+  variable :: Parser Expr
+  variable = do
+    i <- identifier
+    return (Var i)
+  
+  lambda :: Parser Expr
+  lambda = do
+    reservedOp "\\"
+    args <- many identifier
+    reservedOp "->"
+    body <- expr
+    return $ foldr Lam body args
+
+  choosein :: Parser Expr
+  choosein = do
+    reserved "choose"
     i <- identifier
     reserved "="
+    b <- expr
+    reserved "in"
     e <- expr
-    return (B i e)
+    return (Ch i b e)
+
+  letin :: Parser Expr
+  letin = do
+    reserved "let"
+    x <- identifier
+    reservedOp "="
+    e1 <- expr
+    reserved "in"
+    e2 <- expr
+    return (Let x e1 e2)
+
+  bexpr :: Parser Expr
+  bexpr = lambda <%> choosein <%> letin <%> fexp <%> parens expr
+  
+  expr :: Parser Expr
+  expr = 
+    do
+      lexp <- bexpr
+      c <- expr'
+      return (c lexp)
+  
+  expr' :: Parser (Expr -> Expr)
+  expr' =
+    do
+      op <- operator
+      rexp <- expr
+      c <- expr'
+      return (\lexp -> createExpr op lexp (c rexp))
+    <%>
+    do
+      return (\e -> e)
+  
+  fexp :: Parser Expr
+  fexp = do
+    fs <- many1 aexp
+    return (foldl1 App fs)
+
+  aexp :: Parser Expr
+  aexp = num <%> variable
 
   funDecl :: Parser FDecl
   funDecl = do
@@ -105,27 +88,15 @@ module Sharade.Parser.Parser (
     as <- many identifier
     reserved "="
     e <- expr
-    return (FDecl f as e)
+    return (f, foldr Lam e as)
 
-  program :: Parser [FDecl]
-  program =
-    do
-      d <- funDecl
-      ds <- program
-
-      return (d:ds)
-    <%> return []
   ------------------------------------------------------------------------------
 
-  contents :: Parser a -> Parser a
-  contents p = do
-    Tok.whiteSpace lexer
-    r <- p
-    eof
-    return r
-
-  parseExpr :: String -> Either ParseError SExpr
+  parseExpr :: String -> Either ParseError Expr
   parseExpr s = parse (contents expr) "" s
 
   parseDecl :: String -> Either ParseError FDecl
-  parseDecl s = parse (contents funDecl) "" s
+  parseDecl s = parse (contents $ funDecl) "" s
+
+  parseModule :: String -> Either ParseError [FDecl]
+  parseModule s = parse (contents $ many funDecl) "" s
