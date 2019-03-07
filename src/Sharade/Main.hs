@@ -26,8 +26,7 @@ main = do
       Right haskellProgram -> do
         fw <- openFile wpath WriteMode
 
-        hPutStrLn fw "import Control.Monad"
-        hPutStrLn fw "import Control.Monad.Sharing"
+        hPutStrLn fw "import Sharade.Prelude"
         hPutStr fw haskellProgram
 
         hClose fw
