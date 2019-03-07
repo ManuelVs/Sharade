@@ -169,8 +169,14 @@ module Sharade.Translator.Semantic.TypesEvaluation where
   preludeTypeEnv :: TypeEnv
   preludeTypeEnv = TypeEnv $ Map.fromList [
     ("(?)", Forall [] $ TArr numberType (TArr numberType numberType)),
-    ("(+)", Forall [TV "a"] $ TArr numberType (TArr numberType numberType)) ]
-    --("(-)",  TArr numberType (TArr numberType numberType))),
-    --("(*)",  TArr numberType (TArr numberType numberType))),
-    --("(/)",  TArr numberType (TArr numberType numberType))),
-  --]
+    ("(+)", Forall [] $ TArr numberType (TArr numberType numberType)),
+    ("(-)", Forall [] $ TArr numberType (TArr numberType numberType)),
+    ("(*)", Forall [] $ TArr numberType (TArr numberType numberType)),
+    ("(/)", Forall [] $ TArr numberType (TArr numberType numberType)),
+    ("(>)", Forall [] $ TArr numberType (TArr numberType boolType)),
+    ("(>=)", Forall [] $ TArr numberType (TArr numberType boolType)),
+    ("(<)", Forall [] $ TArr numberType (TArr numberType boolType)),
+    ("(<=)", Forall [] $ TArr numberType (TArr numberType boolType)),
+    ("(==)", Forall [] $ TArr numberType (TArr numberType boolType)),
+    ("(!=)", Forall [] $ TArr numberType (TArr numberType boolType))
+    ]

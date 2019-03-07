@@ -10,17 +10,24 @@ module Sharade.Translator.Translator (
   import Sharade.Translator.Semantic.TypesEvaluation
   import Sharade.Parser.Syntax
 
-  reservedVarTranslation :: VarName -> Maybe String
-  reservedVarTranslation "(+)" = Just "(\\p1 p2 -> (return (+)) <*> p1 <*> p2)"
-  reservedVarTranslation "(?)" = Just "(\\p1 p2 -> mplus p1 p2)"
-  reservedVarTranslation _ = Nothing
+  translateVarExpr :: VarName -> String
+  translateVarExpr "(+)" = "mAdd"
+  translateVarExpr "(-)" = "mSub"
+  translateVarExpr "(*)" = "mMul"
+  translateVarExpr "(/)" = "mDiv"
+  translateVarExpr "(<)" = "mLt"
+  translateVarExpr "(<=)" = "mLeq"
+  translateVarExpr "(>)" = "mGt"
+  translateVarExpr "(>=)" = "mGeq"
+  translateVarExpr "(==)" = "mEq"
+  translateVarExpr "(!=)" = "mNeq"
+  translateVarExpr "(?)" = "mplus"
+  translateVarExpr v = v
 
   translateExpr :: Expr -> String
   translateExpr (Lit l) = "return " ++ l
 
-  translateExpr (Var v) = translateExpr' (reservedVarTranslation v) where
-    translateExpr' (Just v) = v
-    translateExpr' Nothing = v
+  translateExpr (Var v) = translateVarExpr v
 
   translateExpr (Ch v b e) =
     "share (" ++ translateExpr b ++ ") >>= (\\" ++ v ++ " -> " ++
