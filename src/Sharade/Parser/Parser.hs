@@ -55,23 +55,65 @@ module Sharade.Parser.Parser (
   bexpr = lambda <%> choosein <%> letin <%> fexp <%> parens expr
   
   expr :: Parser Expr
-  expr = 
-    do
-      lexp <- bexpr
-      c <- expr'
-      return (c lexp)
+  expr = expr' 0
+
+  expr' :: Int -> Parser Expr
+  expr' 0 = do
+    le <- expr' 1
+    cont <- expr'' 0
+    return (cont le)
   
-  expr' :: Parser (Expr -> Expr)
-  expr' =
+  expr' 1 = do
+    le <- expr' 2
+    cont <- expr'' 1
+    return (cont le)
+
+  expr' 2 = do
+    le <- expr' 3
+    cont <- expr'' 2
+    return (cont le)
+
+  expr' 3 = bexpr
+
+  expr'' :: Int -> Parser (Expr -> Expr)
+  expr'' 0 =
     do
-      op <- operator
-      rexp <- expr
-      c <- expr'
-      return (\lexp -> createExpr op lexp (c rexp))
+      reservedOp "?"
+      rexp <- expr' 1
+      cont <- expr'' 0
+      return (\lexp -> createExpr "?" lexp (cont rexp))
     <%>
     do
       return (\e -> e)
-  
+    
+  expr'' 1 =
+    do
+      reservedOp "+"
+      rexp <- expr' 2
+      cont <- expr'' 1
+      return (\lexp -> createExpr "+" lexp (cont rexp))
+    <%>
+    do
+      reservedOp "-"
+      rexp <- expr' 2
+      cont <- expr'' 1
+      return (\lexp -> createExpr "-" lexp (cont rexp))
+    <%> return (\e -> e)
+
+  expr'' 2 =
+    do
+      reservedOp "*"
+      rexp <- expr' 3
+      cont <- expr'' 2
+      return (\lexp -> createExpr "*" lexp (cont rexp))
+    <%>
+    do
+      reservedOp "/"
+      rexp <- expr' 3
+      cont <- expr'' 2
+      return (\lexp -> createExpr "/" lexp (cont rexp))
+    <%> return (\e -> e)
+      
   fexp :: Parser Expr
   fexp = do
     fs <- many1 aexp

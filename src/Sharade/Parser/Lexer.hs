@@ -14,7 +14,7 @@ module Sharade.Parser.Lexer where
     , Tok.opStart         = oneOf ":!#$%&*+./<=>?@\\^|-~"
     , Tok.opLetter        = oneOf ":!#$%&*+./<=>?@\\^|-~"
     , Tok.reservedNames   = ["choose", "in"]
-    , Tok.reservedOpNames = ["->", "\\", "="]
+    , Tok.reservedOpNames = ["->", "\\", "=", "+", "-", "*", "/", "?"]
     , Tok.caseSensitive   = True
     }
 
