@@ -73,7 +73,12 @@ module Sharade.Parser.Parser (
     cont <- expr'' 2
     return (cont le)
 
-  expr' 3 = bexpr
+  expr' 3 = do
+    le <- expr' 4
+    cont <- expr'' 3
+    return (cont le)
+    
+  expr' 4 = bexpr
 
   expr'' :: Int -> Parser (Expr -> Expr)
   expr'' 0 =
@@ -85,35 +90,73 @@ module Sharade.Parser.Parser (
     <%>
     do
       return (\e -> e)
-    
+  
   expr'' 1 =
     do
-      reservedOp "+"
-      rexp <- expr' 2
-      cont <- expr'' 1
-      return (\lexp -> createExpr "+" lexp (cont rexp))
+      reservedOp "<"
+      rexp <- expr' 3
+      cont <- expr'' 2
+      return (\lexp -> createExpr "<" lexp (cont rexp))
     <%>
     do
-      reservedOp "-"
-      rexp <- expr' 2
-      cont <- expr'' 1
-      return (\lexp -> createExpr "-" lexp (cont rexp))
+      reservedOp "<="
+      rexp <- expr' 3
+      cont <- expr'' 2
+      return (\lexp -> createExpr "<=" lexp (cont rexp))
+    <%>
+    do
+      reservedOp ">"
+      rexp <- expr' 3
+      cont <- expr'' 2
+      return (\lexp -> createExpr ">" lexp (cont rexp))
+    <%>
+    do
+      reservedOp ">="
+      rexp <- expr' 3
+      cont <- expr'' 2
+      return (\lexp -> createExpr ">=" lexp (cont rexp))
+    <%>
+    do
+      reservedOp "=="
+      rexp <- expr' 3
+      cont <- expr'' 2
+      return (\lexp -> createExpr "==" lexp (cont rexp))
+    <%>
+    do
+      reservedOp "!="
+      rexp <- expr' 3
+      cont <- expr'' 2
+      return (\lexp -> createExpr "!=" lexp (cont rexp))
     <%> return (\e -> e)
 
   expr'' 2 =
     do
-      reservedOp "*"
+      reservedOp "+"
       rexp <- expr' 3
       cont <- expr'' 2
+      return (\lexp -> createExpr "+" lexp (cont rexp))
+    <%>
+    do
+      reservedOp "-"
+      rexp <- expr' 3
+      cont <- expr'' 2
+      return (\lexp -> createExpr "-" lexp (cont rexp))
+    <%> return (\e -> e)
+
+  expr'' 3 =
+    do
+      reservedOp "*"
+      rexp <- expr' 4
+      cont <- expr'' 3
       return (\lexp -> createExpr "*" lexp (cont rexp))
     <%>
     do
       reservedOp "/"
-      rexp <- expr' 3
-      cont <- expr'' 2
+      rexp <- expr' 4
+      cont <- expr'' 3
       return (\lexp -> createExpr "/" lexp (cont rexp))
     <%> return (\e -> e)
-      
+  
   fexp :: Parser Expr
   fexp = do
     fs <- many1 aexp
