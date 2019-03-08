@@ -1,0 +1,6 @@
+
+# Simple function
+f a b = a * b ;
+
+# High-order function. Applies a function to two arguments
+g c a b = c a b ;

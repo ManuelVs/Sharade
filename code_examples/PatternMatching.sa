@@ -1,0 +1,6 @@
+
+# Pattern matching in case expression
+f a = case a of
+  0 -> 1 ;
+  1 -> 2 ;
+  a -> a + a ;; # Name shadowing!
