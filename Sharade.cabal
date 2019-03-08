@@ -51,14 +51,16 @@ executable Sharade
   main-is:             Sharade/Main.hs
   
   -- Modules included in this executable, other than Main.
-  other-modules:       Sharade.Parser.Lexer,
+  other-modules:       Sharade.Prelude,
+                       Sharade.Parser.Lexer,
                        Sharade.Parser.Syntax,
+                       Sharade.Parser.Expression,
+                       Sharade.Parser.Declaration,
                        Sharade.Parser.Parser,
                        Sharade.Translator.Semantic.Substitutable,
                        Sharade.Translator.Semantic.Type,
                        Sharade.Translator.Semantic.TypeEnv,
                        Sharade.Translator.Semantic.TypesEvaluation,
-                       Sharade.Translator.Semantic.Internal.Utils,
                        Sharade.Translator.Translator
   
   -- LANGUAGE extensions used by modules in this package.
@@ -71,6 +73,8 @@ executable Sharade
   Exposed-Modules:     Sharade.Prelude,
                        Sharade.Parser.Lexer,
                        Sharade.Parser.Syntax,
+                       Sharade.Parser.Expression,
+                       Sharade.Parser.Declaration,
                        Sharade.Parser.Parser,
                        Sharade.Translator.Semantic.Substitutable,
                        Sharade.Translator.Semantic.Type,
