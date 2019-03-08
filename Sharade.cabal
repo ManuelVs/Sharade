@@ -65,7 +65,7 @@ executable Sharade
   -- other-extensions:    
   
   -- Other library packages from which modules are imported.
-  build-depends:       base >=4.9 && <5.0, mtl, parsec-numbers, parsec, containers
+  build-depends:       base >=4.9 && <5.0, mtl, parsec, parsec-numbers, containers
   
   Exposed-Modules:     Sharade.Prelude,
                        Sharade.Parser.Lexer,

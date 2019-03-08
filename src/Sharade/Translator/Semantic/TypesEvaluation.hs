@@ -8,7 +8,7 @@ module Sharade.Translator.Semantic.TypesEvaluation where
   import Control.Monad.Except
 
   import Data.List (nub)
-  import Data.Foldable (foldr)
+  import Data.Foldable (foldr, foldrM)
   import qualified Data.Map as Map
   import qualified Data.Set as Set
 
@@ -121,6 +121,20 @@ module Sharade.Translator.Semantic.TypesEvaluation where
     (s1, t1) <- infer env' e
     return (s1, apply s1 tv `TArr` t1)
   
+  -- Case expression
+  infer env (Case e ms) = do
+    tec <- fresh -- Type of 'e' and matches' left part
+    ter <- fresh -- Type of the mathes' right part
+
+    -- Create the Type tree of the case expression
+    t' <- foldrM (\_ t -> return $ TArr tec (TArr ter t)) ter ms
+    -- Add the first type
+    let t = TArr tec t'
+
+    -- Create the list of expression, useful for the inferPrim function
+    let tms = e : foldr (\(Match pm em) re -> patternToExpr pm : em : re) [] ms
+    inferPrim env tms t
+
   -- Function application
   infer env (App e1 e2) = do
     tv <- fresh
@@ -129,6 +143,9 @@ module Sharade.Translator.Semantic.TypesEvaluation where
     s3       <- unify (apply s2 t1) (TArr t2 tv)
     return (s3 `compose` s2 `compose` s1, apply s3 tv)
 
+  patternToExpr :: Pattern -> Expr
+  patternToExpr (PVar v) = Var v
+  patternToExpr (PLit l) = Lit l
 
   inferPrim :: TypeEnv -> [Expr] -> Type -> Infer (Subst, Type)
   inferPrim env l t = do

@@ -40,9 +40,17 @@ module Sharade.Translator.Translator (
   translateExpr (Lam x e) =
     "(\\" ++ x ++ " -> " ++ translateExpr e ++ ")"
 
+  translateExpr (Case e ms) =
+    "(" ++ translateExpr e ++ ") >>= (\\pec -> case pec of {" ++
+    concatMap translateMatch ms ++ "})"
+
   translateExpr (App le re) =
     translateExpr le ++ " (" ++ translateExpr re ++ ")"
-
+  
+  translateMatch :: Match -> String
+  translateMatch (Match (PLit l) e) = l ++ " -> " ++ translateExpr e ++ ";"
+  translateMatch (Match (PVar v) e) =
+    v ++ " -> (\\" ++ v ++ " -> " ++ translateExpr e ++ ") (return " ++ v ++ ");"
   
   translateType :: Type -> String
   translateType (TVar (TV v)) = "s " ++ v
@@ -70,4 +78,4 @@ module Sharade.Translator.Translator (
       Forall _ t <- lookupTypeEnv ts funName
       tf <- translateDecl f t
       return $ tf ++ "\n" ++ s) "" md
-
+  
