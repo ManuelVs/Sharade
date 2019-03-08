@@ -2,36 +2,38 @@ module Sharade.Parser.Parser (
   parseDecl, parseExpr, parseModule
 )where
 
-  import Text.ParserCombinators.Parsec
-  import Text.ParserCombinators.Parsec.Number
+  import Control.Monad.State
 
+  import Text.Parsec hiding (State)
+  import Text.Parsec.Indent
+  import Text.Parsec.Number
+  
   import Sharade.Parser.Lexer
   import Sharade.Parser.Syntax
   
   createExpr op lexp rexp = (App (App (Var prefixNot) lexp) rexp) where
     prefixNot = "(" ++ op ++ ")"
-
-
-  num :: Parser Expr
+  
+  num :: IParser Expr
   num = do
     r <- floating <%> floating2 False
     spaces
     return (Lit $ show r)
   
-  variable :: Parser Expr
+  variable :: IParser Expr
   variable = do
     i <- identifier
     return (Var i)
   
-  lambda :: Parser Expr
+  lambda :: IParser Expr
   lambda = do
     reservedOp "\\"
     args <- many identifier
     reservedOp "->"
     body <- expr
     return $ foldr Lam body args
-
-  choosein :: Parser Expr
+  
+  choosein :: IParser Expr
   choosein = do
     reserved "choose"
     i <- identifier
@@ -40,8 +42,8 @@ module Sharade.Parser.Parser (
     reserved "in"
     e <- expr
     return (Ch i b e)
-
-  letin :: Parser Expr
+  
+  letin :: IParser Expr
   letin = do
     reserved "let"
     x <- identifier
@@ -50,14 +52,41 @@ module Sharade.Parser.Parser (
     reserved "in"
     e2 <- expr
     return (Let x e1 e2)
-
-  bexpr :: Parser Expr
-  bexpr = lambda <%> choosein <%> letin <%> fexp <%> parens expr
   
-  expr :: Parser Expr
+  caseexpr :: IParser Expr
+  caseexpr = do
+    reserved "case"
+    e <- expr
+    reserved "of"
+    ms <- block casematch
+    return (Case e ms)
+  
+  casematch :: IParser Match
+  casematch = do
+    p <- pattern
+    reservedOp "->"
+    e <- expr
+    semiColon
+    return (Match p e)
+  
+  pattern :: IParser Pattern
+  pattern =
+    do
+      r <- floating <%> floating2 False
+      spaces
+      return (PLit $ show r)
+    <%>
+    do
+      i <- identifier
+      return (PVar i)
+  
+  bexpr :: IParser Expr
+  bexpr = lambda <%> choosein <%> letin <%> caseexpr <%> fexp <%> parens expr
+  
+  expr :: IParser Expr
   expr = expr' 0
-
-  expr' :: Int -> Parser Expr
+  
+  expr' :: Int -> IParser Expr
   expr' 0 = do
     le <- expr' 1
     cont <- expr'' 0
@@ -67,20 +96,20 @@ module Sharade.Parser.Parser (
     le <- expr' 2
     cont <- expr'' 1
     return (cont le)
-
+  
   expr' 2 = do
     le <- expr' 3
     cont <- expr'' 2
     return (cont le)
-
+  
   expr' 3 = do
     le <- expr' 4
     cont <- expr'' 3
     return (cont le)
     
   expr' 4 = bexpr
-
-  expr'' :: Int -> Parser (Expr -> Expr)
+  
+  expr'' :: Int -> IParser (Expr -> Expr)
   expr'' 0 =
     do
       reservedOp "?"
@@ -128,7 +157,7 @@ module Sharade.Parser.Parser (
       cont <- expr'' 2
       return (\lexp -> createExpr "!=" lexp (cont rexp))
     <%> return (\e -> e)
-
+  
   expr'' 2 =
     do
       reservedOp "+"
@@ -142,7 +171,7 @@ module Sharade.Parser.Parser (
       cont <- expr'' 2
       return (\lexp -> createExpr "-" lexp (cont rexp))
     <%> return (\e -> e)
-
+  
   expr'' 3 =
     do
       reservedOp "*"
@@ -157,29 +186,35 @@ module Sharade.Parser.Parser (
       return (\lexp -> createExpr "/" lexp (cont rexp))
     <%> return (\e -> e)
   
-  fexp :: Parser Expr
+  fexp :: IParser Expr
   fexp = do
     fs <- many1 aexp
     return (foldl1 App fs)
-
-  aexp :: Parser Expr
+  
+  aexp :: IParser Expr
   aexp = num <%> variable
-
-  funDecl :: Parser FDecl
+  
+  funDecl :: IParser FDecl
   funDecl = do
+    topLevel
     f <- identifier
     as <- many identifier
     reserved "="
     e <- expr
+    semiColon
     return (f, foldr Lam e as)
-
+  
   ------------------------------------------------------------------------------
-
+  
+  iParse :: IParser a -> SourceName -> String -> Either ParseError a
+  iParse aParser source_name input = runIndentParser aParser () source_name input
+  
   parseExpr :: String -> Either ParseError Expr
-  parseExpr s = parse (contents expr) "" s
-
+  parseExpr s = iParse (contents expr) "" s
+  
   parseDecl :: String -> Either ParseError FDecl
-  parseDecl s = parse (contents $ funDecl) "" s
-
+  parseDecl s = iParse (contents funDecl) "" s
+  
   parseModule :: String -> Either ParseError [FDecl]
-  parseModule s = parse (contents $ many funDecl) "" s
+  parseModule s = iParse (contents $ block funDecl) "" s
+  

@@ -19,7 +19,7 @@ main = do
   fr <- openFile path ReadMode
   pr <- hGetContents fr
   
-  case parseProgram pr of
+  case Parser.parseModule pr of
     Left l -> print l
     Right r -> case Translator.translateModule r of
       Left l -> print l
