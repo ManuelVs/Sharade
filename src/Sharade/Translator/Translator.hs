@@ -46,7 +46,8 @@ module Sharade.Translator.Translator (
 
   translateExpr (Case e ms) =
     "(" ++ translateExpr e ++ ") >>= (\\pec -> case pec of {" ++
-    concatMap translateMatch ms ++ "})"
+    concatMap translateMatch ms ++ 
+    "_ -> mzero;})"
 
   translateExpr (App le re) =
     translateExpr le ++ " <#> (" ++ translateExpr re ++ ")"

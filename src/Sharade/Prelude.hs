@@ -1,6 +1,6 @@
 module Sharade.Prelude (
   --mFix,
-  mplus,
+  MonadPlus(..),
   Sharing(), share, results,
   mPlus,
   (<#>),
