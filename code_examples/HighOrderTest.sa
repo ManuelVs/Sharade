@@ -1,6 +1,7 @@
 
-# Simple function
-f a b = a * b ;
+# Simple functions
+f a b = a + b ;
+g a b = a * b ;
 
 # High-order function. Applies a function to two arguments
-g c a b = c a b ;
+h z a b = z a b ;
