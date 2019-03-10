@@ -179,13 +179,12 @@ module Sharade.Translator.Semantic.TypesEvaluation where
     Right ty -> inferTop (extend env (name, ty)) xs
 
   
-  
   genericTVar :: Type
   genericTVar = TVar $ TV "a"
 
   preludeTypeEnv :: TypeEnv
   preludeTypeEnv = TypeEnv $ Map.fromList [
-    ("(?)", Forall [] $ TArr numberType (TArr numberType numberType)),
+    ("(?)", Forall [] $ TArr genericTVar (TArr genericTVar genericTVar)),
     ("(+)", Forall [] $ TArr numberType (TArr numberType numberType)),
     ("(-)", Forall [] $ TArr numberType (TArr numberType numberType)),
     ("(*)", Forall [] $ TArr numberType (TArr numberType numberType)),

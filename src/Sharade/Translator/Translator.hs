@@ -21,7 +21,7 @@ module Sharade.Translator.Translator (
   translateVarExpr "(>=)" = "mGeq"
   translateVarExpr "(==)" = "mEq"
   translateVarExpr "(!=)" = "mNeq"
-  translateVarExpr "(?)" = "mplus"
+  translateVarExpr "(?)" = "mPlus"
   translateVarExpr v = v
 
   translateExpr :: Expr -> String
@@ -38,14 +38,14 @@ module Sharade.Translator.Translator (
     "let " ++ v ++ " = " ++ translateExpr b ++ " in " ++ translateExpr e
 
   translateExpr (Lam x e) =
-    "(\\" ++ x ++ " -> " ++ translateExpr e ++ ")"
+    "return (\\" ++ x ++ " -> " ++ translateExpr e ++ ")"
 
   translateExpr (Case e ms) =
     "(" ++ translateExpr e ++ ") >>= (\\pec -> case pec of {" ++
     concatMap translateMatch ms ++ "})"
 
   translateExpr (App le re) =
-    translateExpr le ++ " (" ++ translateExpr re ++ ")"
+    translateExpr le ++ " <#> (" ++ translateExpr re ++ ")"
   
   translateMatch :: Match -> String
   translateMatch (Match (PLit l) e) = l ++ " -> " ++ translateExpr e ++ ";"
@@ -56,7 +56,7 @@ module Sharade.Translator.Translator (
   translateType (TVar (TV v)) = "s " ++ v
   translateType (TCon "Number") = "s Double"
   translateType (TCon v) = "s " ++ v
-  translateType (TArr lt rt) = "(" ++ translateType lt ++ ") -> " ++ translateType rt
+  translateType (TArr lt rt) = "s ((" ++ translateType lt ++ ") -> " ++ translateType rt ++ ")"
   
 
   translateDecl :: FDecl -> Type -> Either TypeError String

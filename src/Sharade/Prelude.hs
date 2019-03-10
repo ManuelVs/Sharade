@@ -1,22 +1,35 @@
 module Sharade.Prelude (
-  mplus, Sharing(), share, results, mAdd, mSub, mMul, mDiv, mLt, mLeq, mGt, mGeq, mEq, mNeq
+  mplus,
+  Sharing(), share, results,
+  mPlus,
+  (<#>),
+  mAdd, mSub, mMul, mDiv,
+  mLt, mLeq, mGt, mGeq, mEq, mNeq
 ) where
 
   import Control.Monad
   import Control.Monad.Sharing
 
-  mAdd, mSub, mMul :: (Sharing s, Num a) => s a -> s a -> s a
-  mAdd = (\p1 p2 -> return (+) <*> p1 <*> p2)
-  mSub = (\p1 p2 -> return (-) <*> p1 <*> p2)
-  mMul = (\p1 p2 -> return (*) <*> p1 <*> p2)
+  mPlus :: (Sharing s) => s (s a -> s (s a -> s a))
+  mPlus = return (\a -> return (\b -> mplus a b))
 
-  mDiv :: (Sharing s, Fractional a) => s a -> s a -> s a
-  mDiv = (\p1 p2 -> return (/) <*> p1 <*> p2)
+  infixl 4 <#>
+  (<#>) :: (Sharing s) => s (s a -> s b) -> (s a) -> (s b)
+  f <#> a = f >>= (\f' -> f' a)
 
-  mLt, mLeq, mGt, mGeq, mEq, mNeq :: (Sharing s, Ord a) => s a -> s a -> s Bool
-  mLt  = (\p1 p2 -> return (<) <*> p1 <*> p2)
-  mLeq = (\p1 p2 -> return (<=) <*> p1 <*> p2)
-  mGt  = (\p1 p2 -> return (>) <*> p1 <*> p2)
-  mGeq = (\p1 p2 -> return (>=) <*> p1 <*> p2)
-  mEq  = (\p1 p2 -> return (==) <*> p1 <*> p2)
-  mNeq  = (\p1 p2 -> return (/=) <*> p1 <*> p2)
+  mAdd, mSub, mMul :: (Sharing s, Num a) => s (s a -> s (s a -> s a))
+  mAdd = return (\a -> return (\b -> (return (+)) <*> a <*> b))
+  mSub = return (\a -> return (\b -> (return (-)) <*> a <*> b))
+  mMul = return (\a -> return (\b -> (return (*)) <*> a <*> b))
+
+  mDiv :: (Sharing s, Fractional a) => s (s a -> s (s a -> s a))
+  mDiv = return (\a -> return (\b -> (return (/)) <*> a <*> b))
+
+  mLt, mLeq, mGt, mGeq, mEq, mNeq :: (Sharing s, Ord a) => s (s a -> s (s a -> s Bool))
+  mLt  = return (\a -> return (\b -> return (<) <*> a <*> b))
+  mLeq  = return (\a -> return (\b -> return (<=) <*> a <*> b))
+  mGt  = return (\a -> return (\b -> return (>) <*> a <*> b))
+  mGeq  = return (\a -> return (\b -> return (>=) <*> a <*> b))
+  mEq  = return (\a -> return (\b -> return (==) <*> a <*> b))
+  mNeq  = return (\a -> return (\b -> return (/=) <*> a <*> b))
+

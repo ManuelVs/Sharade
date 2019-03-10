@@ -120,7 +120,7 @@ module Sharade.Parser.Expression where
   bexpr = lambda <%> choosein <%> letin <%> caseexpr <%> fexp <%> parens expr
 
   aexp :: IParser Expr
-  aexp = num <%> variable
+  aexp = num <%> variable <%> parens expr
 
   fexp :: IParser Expr
   fexp = do
