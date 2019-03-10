@@ -40,6 +40,10 @@ module Sharade.Translator.Translator (
   translateExpr (Lam x e) =
     "return (\\" ++ x ++ " -> " ++ translateExpr e ++ ")"
 
+  translateExpr (Fix (Lam _ e)) =
+    --"mFix (" ++ translateExpr e ++ ")"
+    translateExpr e
+
   translateExpr (Case e ms) =
     "(" ++ translateExpr e ++ ") >>= (\\pec -> case pec of {" ++
     concatMap translateMatch ms ++ "})"

@@ -15,4 +15,4 @@ module Sharade.Parser.Declaration where
     reserved "="
     e <- expr
     semiColon
-    return (f, foldr Lam e as)
+    return (f, Fix $ foldr Lam e (f:as))

@@ -1,4 +1,5 @@
 module Sharade.Prelude (
+  --mFix,
   mplus,
   Sharing(), share, results,
   mPlus,
@@ -9,6 +10,9 @@ module Sharade.Prelude (
 
   import Control.Monad
   import Control.Monad.Sharing
+
+  --mFix :: (Sharing s) => s (s (s a -> s a) -> s a)
+  --mFix = return (\f -> let x = f <#> x in x)
 
   mPlus :: (Sharing s) => s (s a -> s (s a -> s a))
   mPlus = return (\a -> return (\b -> mplus a b))

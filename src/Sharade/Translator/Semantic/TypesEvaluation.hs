@@ -121,19 +121,22 @@ module Sharade.Translator.Semantic.TypesEvaluation where
     (s1, t1) <- infer env' e
     return (s1, apply s1 tv `TArr` t1)
   
+  infer env (Fix e1) = do
+    tv <- fresh
+    inferPrim env [e1] ((tv `TArr` tv) `TArr` tv)
+
   -- Case expression
   infer env (Case e ms) = do
-    tec <- fresh -- Type of 'e' and matches' left part
-    ter <- fresh -- Type of the mathes' right part
-
-    -- Create the Type tree of the case expression
-    t' <- foldrM (\_ t -> return $ TArr tec (TArr ter t)) ter ms
-    -- Add the first type
-    let t = TArr tec t'
-
-    -- Create the list of expression, useful for the inferPrim function
-    let tms = e : foldr (\(Match pm em) re -> patternToExpr pm : em : re) [] ms
-    inferPrim env tms t
+    (s1, te) <- infer env e
+    tp <- fresh
+    (s2, (te', tp')) <- foldM inferStep (s1, (te, tp)) ms
+    return (s2, te')
+    where
+      inferStep (s, (t1, t2)) m = do
+        (s1, (t1', t2')) <- inferMatch (apply s env) m
+        s2 <- unify (apply s1 t1) t1'
+        s3 <- unify (apply s2 t2) t2'
+        return (s3 `compose` s2 `compose` s1 `compose` s, (t1', t2'))
 
   -- Function application
   infer env (App e1 e2) = do
@@ -143,9 +146,16 @@ module Sharade.Translator.Semantic.TypesEvaluation where
     s3       <- unify (apply s2 t1) (TArr t2 tv)
     return (s3 `compose` s2 `compose` s1, apply s3 tv)
 
-  patternToExpr :: Pattern -> Expr
-  patternToExpr (PVar v) = Var v
-  patternToExpr (PLit l) = Lit l
+  inferMatch :: TypeEnv -> Match -> Infer (Subst, (Type, Type))
+  inferMatch env (Match (PVar v) em) = do
+    tp <- fresh -- Type of pattern
+    let env' = extend env (v, Forall [] tp)
+    (s1, te) <- infer env' em -- Type of expression
+    return (s1, (tp, te))
+
+  inferMatch env (Match (PLit l) em) = do
+    (s1, te) <- infer env em -- Type of expression
+    return (s1, (typeOfLiteral l, te))
 
   inferPrim :: TypeEnv -> [Expr] -> Type -> Infer (Subst, Type)
   inferPrim env l t = do
