@@ -69,7 +69,7 @@ executable Sharade
   
   -- Other library packages from which modules are imported.
   build-depends:       base >=4.9 && <5.0, parsec, indents, parsec3-numbers,
-                       containers, mtl
+                       containers, mtl, explicit-sharing == 0.10
   
   Exposed-Modules:     Sharade.Prelude,
                        Sharade.List,
