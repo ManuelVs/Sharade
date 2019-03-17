@@ -22,8 +22,30 @@ module Sharade.Translator.Translator (
   translateVarExpr "(==)" = "mEq"
   translateVarExpr "(!=)" = "mNeq"
   translateVarExpr "(?)" = "mPlus"
+  translateVarExpr "Nil" = "nil"
+  translateVarExpr "Cons" = "cons"
   translateVarExpr v = v
 
+  genericTVar :: Type
+  genericTVar = TVar $ TV "a"
+
+  preludeTypeEnv :: TypeEnv
+  preludeTypeEnv = TypeEnv $ Map.fromList [
+    ("(?)", Forall [TV "a"] $ TArr genericTVar (TArr genericTVar genericTVar)),
+    ("(+)", Forall [] $ TArr numberType (TArr numberType numberType)),
+    ("(-)", Forall [] $ TArr numberType (TArr numberType numberType)),
+    ("(*)", Forall [] $ TArr numberType (TArr numberType numberType)),
+    ("(/)", Forall [] $ TArr numberType (TArr numberType numberType)),
+    ("(>)", Forall [] $ TArr numberType (TArr numberType boolType)),
+    ("(>=)", Forall [] $ TArr numberType (TArr numberType boolType)),
+    ("(<)", Forall [] $ TArr numberType (TArr numberType boolType)),
+    ("(<=)", Forall [] $ TArr numberType (TArr numberType boolType)),
+    ("(==)", Forall [] $ TArr numberType (TArr numberType boolType)),
+    ("(!=)", Forall [] $ TArr numberType (TArr numberType boolType)),
+    ("Nil", Forall [TV "a"] $ TList genericTVar),
+    ("Cons", Forall [TV "a"] $ TArr genericTVar (TArr (TList genericTVar) (TList genericTVar)))
+    ]
+  
   translateExpr :: Expr -> String
   translateExpr (Lit l) = "return " ++ l
 
@@ -56,11 +78,22 @@ module Sharade.Translator.Translator (
   translateMatch (Match (PLit l) e) = l ++ " -> " ++ translateExpr e ++ ";"
   translateMatch (Match (PVar v) e) =
     v ++ " -> (\\" ++ v ++ " -> " ++ translateExpr e ++ ") (return " ++ v ++ ");"
+  translateMatch (Match (PCon c ps) e) =
+    "(" ++ c ++ concatMap translatePattern ps ++ ") -> " ++ translateExpr e ++ ";" where
+      translatePattern (PLit l) = " " ++ l
+      translatePattern (PVar v) = " " ++ v
+      translatePattern (PCon c ps) = " (" ++ c ++ concatMap translatePattern ps ++ ")"
   
   translateType :: Type -> String
   translateType (TVar (TV v)) = "s " ++ v
   translateType (TCon "Number") = "s Double"
   translateType (TCon v) = "s " ++ v
+  translateType (TList t) = "s (List s (" ++ translateListedType t ++ "))" where
+    translateListedType (TVar (TV v)) = v
+    translateListedType (TCon "Number") = "Double"
+    translateListedType (TCon v) = v
+    translateListedType (TList t) = "(List s (" ++ translateListedType t ++ "))"
+    translateListedType (TArr lt rt) = "((" ++ translateType lt ++ ") -> " ++ translateType rt ++ ")"
   translateType (TArr lt rt) = "s ((" ++ translateType lt ++ ") -> " ++ translateType rt ++ ")"
   
 

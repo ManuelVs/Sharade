@@ -35,9 +35,11 @@ module Sharade.Translator.Semantic.TypesEvaluation where
       fv (TVar a)   = [a]
       fv (TArr a b) = fv a ++ fv b
       fv (TCon _)   = []
+      fv (TList t)  = fv t
 
       normtype (TArr a b) = TArr (normtype a) (normtype b)
       normtype (TCon a)   = TCon a
+      normtype (TList t)  = TList (normtype t)
       normtype (TVar a)   =
         case lookup a ord of
           Just x -> TVar x
@@ -55,7 +57,7 @@ module Sharade.Translator.Semantic.TypesEvaluation where
     s1 <- unify l l'
     s2 <- unify (apply s1 r) (apply s1 r')
     return (s2 `compose` s1)
-
+  unify (TList t1) (TList t2) = unify t1 t2
   unify (TVar a) t = bind a t
   unify t (TVar a) = bind a t
   unify (TCon a) (TCon b) | a == b = return nullSubst
@@ -130,7 +132,7 @@ module Sharade.Translator.Semantic.TypesEvaluation where
     (s1, te) <- infer env e
     tp <- fresh
     (s2, (te', tp')) <- foldM inferStep (s1, (te, tp)) ms
-    return (s2, te')
+    return (s2, tp')
     where
       inferStep (s, (t1, t2)) m = do
         (s1, (t1', t2')) <- inferMatch (apply s env) m
@@ -156,6 +158,20 @@ module Sharade.Translator.Semantic.TypesEvaluation where
   inferMatch env (Match (PLit l) em) = do
     (s1, te) <- infer env em -- Type of expression
     return (s1, (typeOfLiteral l, te))
+  
+  inferMatch env (Match (PCon c ps) em) = do
+    -- Crear la lista para inferPrim
+    vs <- mapM (\(PVar v) -> return $ Var v) ps
+    env' <- foldM (\env (PVar v) -> do { tp <- fresh; return $ extend env (v, Forall [] tp); }) env ps
+    
+    -- Crear el árbol para inferPrim (Tipo de constructor -> tipo1 -> ... -> tipo esperado)
+    (_, tc) <- lookupEnv env c
+
+    -- Llamar a inferPrim
+    (s1, tp) <- inferPrim env' vs tc
+
+    (s2, te) <- infer (apply s1 env') em
+    return (s1 `compose` s2, (tp, te))
 
   inferPrim :: TypeEnv -> [Expr] -> Type -> Infer (Subst, Type)
   inferPrim env l t = do
@@ -187,22 +203,3 @@ module Sharade.Translator.Semantic.TypesEvaluation where
   inferTop env ((name, ex):xs) = case inferExpr env ex of
     Left err -> Left err
     Right ty -> inferTop (extend env (name, ty)) xs
-
-  
-  genericTVar :: Type
-  genericTVar = TVar $ TV "a"
-
-  preludeTypeEnv :: TypeEnv
-  preludeTypeEnv = TypeEnv $ Map.fromList [
-    ("(?)", Forall [] $ TArr genericTVar (TArr genericTVar genericTVar)),
-    ("(+)", Forall [] $ TArr numberType (TArr numberType numberType)),
-    ("(-)", Forall [] $ TArr numberType (TArr numberType numberType)),
-    ("(*)", Forall [] $ TArr numberType (TArr numberType numberType)),
-    ("(/)", Forall [] $ TArr numberType (TArr numberType numberType)),
-    ("(>)", Forall [] $ TArr numberType (TArr numberType boolType)),
-    ("(>=)", Forall [] $ TArr numberType (TArr numberType boolType)),
-    ("(<)", Forall [] $ TArr numberType (TArr numberType boolType)),
-    ("(<=)", Forall [] $ TArr numberType (TArr numberType boolType)),
-    ("(==)", Forall [] $ TArr numberType (TArr numberType boolType)),
-    ("(!=)", Forall [] $ TArr numberType (TArr numberType boolType))
-    ]

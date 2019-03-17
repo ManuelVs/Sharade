@@ -8,6 +8,7 @@ module Sharade.Translator.Semantic.Type where
   data Type
     = TVar TVar
     | TCon TName
+    | TList Type
     | TArr Type Type
     deriving (Show, Eq, Ord)
 

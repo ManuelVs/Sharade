@@ -185,6 +185,11 @@ module Sharade.Parser.Expression where
   pattern :: IParser Pattern
   pattern =
     do
+      i <- identifier
+      is <- many identifier
+      return (PCon i (map PVar is))
+    <%>
+    do
       r <- floating <%> floating2 False
       spaces
       return (PLit $ show r)

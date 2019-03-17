@@ -8,7 +8,7 @@ module Sharade.Translator.Semantic.TypeEnv where
   import Sharade.Translator.Semantic.Type
   import Sharade.Parser.Syntax
 
-  newtype TypeEnv = TypeEnv (Map.Map VarName Scheme) deriving (Semigroup, Monoid)
+  newtype TypeEnv = TypeEnv (Map.Map VarName Scheme) deriving (Semigroup, Monoid, Show)
 
   extend :: TypeEnv -> (VarName, Scheme) -> TypeEnv
   extend (TypeEnv env) (x, s) = TypeEnv $ Map.insert x s env

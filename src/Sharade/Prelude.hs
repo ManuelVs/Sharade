@@ -1,18 +1,18 @@
 module Sharade.Prelude (
-  --mFix,
   MonadPlus(..),
-  Sharing(), share, results,
+  Sharing(), share, results, resultList, unsafeResults,
   mPlus,
   (<#>),
   mAdd, mSub, mMul, mDiv,
-  mLt, mLeq, mGt, mGeq, mEq, mNeq
+  mLt, mLeq, mGt, mGeq, mEq, mNeq,
+  Convertible(..),
+  List(..), nil, cons, isEmpty, first, rest
 ) where
 
   import Control.Monad
   import Control.Monad.Sharing
-
-  --mFix :: (Sharing s) => s (s (s a -> s a) -> s a)
-  --mFix = return (\f -> let x = f <#> x in x)
+  
+  import Sharade.List
 
   mPlus :: (Sharing s) => s (s a -> s (s a -> s a))
   mPlus = return (\a -> return (\b -> mplus a b))
@@ -36,4 +36,3 @@ module Sharade.Prelude (
   mGeq  = return (\a -> return (\b -> return (>=) <*> a <*> b))
   mEq  = return (\a -> return (\b -> return (==) <*> a <*> b))
   mNeq  = return (\a -> return (\b -> return (/=) <*> a <*> b))
-

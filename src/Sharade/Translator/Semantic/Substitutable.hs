@@ -8,16 +8,18 @@ module Sharade.Translator.Semantic.Substitutable where
   type Subst = Map.Map TVar Type
 
   class Substitutable a where
-      apply :: Subst -> a -> a
-      ftv   :: a -> Set.Set TVar
+    apply :: Subst -> a -> a
+    ftv   :: a -> Set.Set TVar
   
   instance Substitutable Type where
     apply _ (TCon a)       = TCon a
     apply s t@(TVar a)     = Map.findWithDefault t a s
+    apply s (TList t)      = TList (apply s t)
     apply s (t1 `TArr` t2) = apply s t1 `TArr` apply s t2
 
     ftv TCon{}         = Set.empty
     ftv (TVar a)       = Set.singleton a
+    ftv (TList t)      = ftv t
     ftv (t1 `TArr` t2) = ftv t1 `Set.union` ftv t2
 
   instance Substitutable Scheme where
