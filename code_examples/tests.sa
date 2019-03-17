@@ -1,0 +1,19 @@
+
+# Factorial
+fact n = case n of
+  1 -> 1 ;
+  n -> n * fact (n - 1) ;;
+
+# Fibonacci
+fib n = case n of
+  0 -> 1 ;
+  1 -> 1 ;
+  n -> fib (n - 1) + fib (n - 2) ;;
+
+# Test
+t n = case n of
+  0 -> n + n ;
+  1 -> n + n ;
+  v -> v + v ;;
+
+t1 n = n + n ;

@@ -1,0 +1,22 @@
+
+# f state -> char -> state
+f s a = case s of
+  0 -> case a of
+    0 -> 0 ;
+    1 -> 0 ? 1 ;;
+  1 -> case a of
+    0 -> 2 ;;;
+
+accept' f s as = case as of
+  Nil       -> s == 2 ;
+  Cons a as -> accept' f (f s a) as ;;
+
+accept f as = accept' f 0 as ;
+
+
+# g = Cons ;
+# h = Cons 2 ;
+# k = h Nil ;
+# l = h k ;
+# unsafeResults (l >>= convert) :: [[Double]]
+# unsafeResults $ accept <#> f <#> (cons <#> (return 1) <#> (cons <#> (return 0) <#> (nil)))
