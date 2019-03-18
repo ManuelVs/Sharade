@@ -15,7 +15,7 @@ module Sharade.Parser.Syntax where
     deriving (Show)
   
   data Match = Match Pattern Expr deriving (Show)
-  data Pattern =
+  data Pattern
     = PVar VarName
     | PLit LitName
     | PCon String [Pattern]

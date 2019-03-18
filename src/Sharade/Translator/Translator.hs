@@ -104,8 +104,8 @@ module Sharade.Translator.Translator (
   translateModule :: [FDecl] -> Either TypeError String
   translateModule md = do
     ts <- inferTop preludeTypeEnv md
-    foldrM (\f@(funName, _) s -> do
+    foldrM (\(funName, e) s -> do
       Forall _ t <- lookupTypeEnv ts funName
       let tStr = funName ++ " :: (Sharing s) => " ++ translateType t
-      let eStr = funName ++ " = " ++ translateExpr expr
+      let eStr = funName ++ " = " ++ translateExpr e
       return $ tStr ++ "\n" ++ eStr ++ "\n" ++ s) "" md
