@@ -17,3 +17,8 @@ t n = case n of
   v -> v + v ;;
 
 t1 n = n + n ;
+
+# g = Cons ;
+# h = Cons 2 ;
+# k = h Nil ;
+# l = h k ;

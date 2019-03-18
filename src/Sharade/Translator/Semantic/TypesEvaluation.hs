@@ -129,10 +129,10 @@ module Sharade.Translator.Semantic.TypesEvaluation where
 
   -- Case expression
   infer env (Case e ms) = do
+    tem <- fresh
     (s1, te) <- infer env e
-    tp <- fresh
-    (s2, (te', tp')) <- foldM inferStep (s1, (te, tp)) ms
-    return (s2, tp')
+    (s2, (te', tem')) <- foldM inferStep (s1, (te, tem)) ms
+    return (s2, tem')
     where
       inferStep (s, (t1, t2)) m = do
         (s1, (t1', t2')) <- inferMatch (apply s env) m
@@ -149,29 +149,24 @@ module Sharade.Translator.Semantic.TypesEvaluation where
     return (s3 `compose` s2 `compose` s1, apply s3 tv)
 
   inferMatch :: TypeEnv -> Match -> Infer (Subst, (Type, Type))
-  inferMatch env (Match (PVar v) em) = do
-    tp <- fresh -- Type of pattern
-    let env' = extend env (v, Forall [] tp)
-    (s1, te) <- infer env' em -- Type of expression
-    return (s1, (tp, te))
+  inferMatch env (Match p e) = do
+    (env', tp) <- inferPattern env p
+    (s, tem) <- infer env' e
+    return (s, (tp, tem))
 
-  inferMatch env (Match (PLit l) em) = do
-    (s1, te) <- infer env em -- Type of expression
-    return (s1, (typeOfLiteral l, te))
-  
-  inferMatch env (Match (PCon c ps) em) = do
-    -- Crear la lista para inferPrim
-    vs <- mapM (\(PVar v) -> return $ Var v) ps
-    env' <- foldM (\env (PVar v) -> do { tp <- fresh; return $ extend env (v, Forall [] tp); }) env ps
-    
-    -- Crear el árbol para inferPrim (Tipo de constructor -> tipo1 -> ... -> tipo esperado)
-    (_, tc) <- lookupEnv env c
-
-    -- Llamar a inferPrim
-    (s1, tp) <- inferPrim env' vs tc
-
-    (s2, te) <- infer (apply s1 env') em
-    return (s1 `compose` s2, (tp, te))
+  inferPattern :: TypeEnv -> Pattern -> Infer (TypeEnv, Type)
+  inferPattern env (PLit l) = return (env, typeOfLiteral l)
+  inferPattern env (PVar v) = do
+    tp <- fresh
+    return (env `extend` (v, Forall [] tp), tp)
+  inferPattern env (PCon c ps) = do
+    (_, tc) <- lookupEnv env c -- `c` is a type constructor
+    foldM inferStep (env, tc) ps where
+      inferStep (env, tc) p = do
+        tv <- fresh
+        (env', tp) <- inferPattern env p
+        s <- unify tc (TArr tp tv)
+        return (env', apply s tv)
 
   inferPrim :: TypeEnv -> [Expr] -> Type -> Infer (Subst, Type)
   inferPrim env l t = do
@@ -183,7 +178,6 @@ module Sharade.Translator.Semantic.TypesEvaluation where
     inferStep (s, tf) exp = do
       (s', t) <- infer (apply s env) exp
       return (s' `compose` s, tf . (TArr t))
-
 
   runInfer :: Infer (Subst, Type) -> Either TypeError Scheme
   runInfer m = case evalState (runExceptT m) initUnique of

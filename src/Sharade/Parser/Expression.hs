@@ -182,10 +182,17 @@ module Sharade.Parser.Expression where
     semiColon
     return (Match p e)
   
+  constructor :: IParser String
+  constructor = do
+    c <- upper
+    cs <- many alphaNum
+    spaces
+    return (c:cs)
+  
   pattern :: IParser Pattern
   pattern =
     do
-      i <- identifier
+      i <- constructor
       is <- many identifier
       return (PCon i (map PVar is))
     <%>
