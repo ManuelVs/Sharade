@@ -25,6 +25,8 @@ module Sharade.Translator.Translator (
   translateVarExpr "(?)" = "mPlus"
   translateVarExpr "Nil" = "nil"
   translateVarExpr "Cons" = "cons"
+  translateVarExpr "True" = "true"
+  translateVarExpr "False" = "false"
   translateVarExpr v = v
 
   genericTVar :: Type
@@ -44,7 +46,9 @@ module Sharade.Translator.Translator (
     ("(==)", Forall [] $ TArr numberType (TArr numberType boolType)),
     ("(!=)", Forall [] $ TArr numberType (TArr numberType boolType)),
     ("Nil", Forall [TV "a"] $ TList genericTVar),
-    ("Cons", Forall [TV "a"] $ TArr genericTVar (TArr (TList genericTVar) (TList genericTVar)))
+    ("Cons", Forall [TV "a"] $ TArr genericTVar (TArr (TList genericTVar) (TList genericTVar))),
+    ("True", Forall [] boolType),
+    ("False", Forall [] boolType)
     ]
   
   translateExpr :: Expr -> String

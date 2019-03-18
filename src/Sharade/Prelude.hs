@@ -1,12 +1,11 @@
 module Sharade.Prelude (
-  MonadPlus(..),
-  Sharing(), share, results, resultList, unsafeResults,
-  mPlus,
+  Sharing, share, results, unsafeResults,
+  mzero, mPlus,
   (<#>),
   mAdd, mSub, mMul, mDiv,
   mLt, mLeq, mGt, mGeq, mEq, mNeq,
-  Convertible(..),
-  List(..), nil, cons, isEmpty, first, rest
+  List(..), nil, cons, isEmpty, first, rest,
+  true, false
 ) where
 
   import Control.Monad
@@ -36,3 +35,7 @@ module Sharade.Prelude (
   mGeq  = return (\a -> return (\b -> return (>=) <*> a <*> b))
   mEq  = return (\a -> return (\b -> return (==) <*> a <*> b))
   mNeq  = return (\a -> return (\b -> return (/=) <*> a <*> b))
+
+  true, false :: (Sharing s) => s Bool
+  true = return True
+  false = return False
