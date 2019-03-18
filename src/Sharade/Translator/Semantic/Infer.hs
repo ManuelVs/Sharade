@@ -2,7 +2,7 @@
 -- That project is licensed under the MIT license.
 -}
 
-module Sharade.Translator.Semantic.TypesEvaluation where
+module Sharade.Translator.Semantic.Infer where
 
   import Control.Monad.State
   import Control.Monad.Except
@@ -117,7 +117,15 @@ module Sharade.Translator.Semantic.TypesEvaluation where
   infer env (Fix e1) = do
     tv <- fresh
     inferPrim env [e1] ((tv `TArr` tv) `TArr` tv)
-
+  
+  -- Function application
+  infer env (App e1 e2) = do
+    tv <- fresh
+    (s1, t1) <- infer env e1
+    (s2, t2) <- infer (apply s1 env) e2
+    s3       <- unify (apply s2 t1) (TArr t2 tv)
+    return (s3 `compose` s2 `compose` s1, apply s3 tv)
+  
   -- Case expression
   infer env (Case e ms) = do
     tem <- fresh
@@ -130,14 +138,6 @@ module Sharade.Translator.Semantic.TypesEvaluation where
         s2 <- unify (apply s1 t1) t1'
         s3 <- unify (apply s2 t2) t2'
         return (s3 `compose` s2 `compose` s1 `compose` s, (t1', t2'))
-
-  -- Function application
-  infer env (App e1 e2) = do
-    tv <- fresh
-    (s1, t1) <- infer env e1
-    (s2, t2) <- infer (apply s1 env) e2
-    s3       <- unify (apply s2 t1) (TArr t2 tv)
-    return (s3 `compose` s2 `compose` s1, apply s3 tv)
 
   inferMatch :: TypeEnv -> Match -> Infer (Subst, (Type, Type))
   inferMatch env (Match p e) = do
@@ -179,7 +179,6 @@ module Sharade.Translator.Semantic.TypesEvaluation where
   closeOver (sub, ty) = normalize sc
     where sc = generalize emptyTyenv (apply sub ty)
 
-  
   inferExpr :: TypeEnv -> Expr -> Either TypeError Scheme
   inferExpr env = runInfer . infer env
 

@@ -61,7 +61,7 @@ executable Sharade
                        Sharade.Translator.Semantic.Substitutable,
                        Sharade.Translator.Semantic.Type,
                        Sharade.Translator.Semantic.TypeEnv,
-                       Sharade.Translator.Semantic.TypesEvaluation,
+                       Sharade.Translator.Semantic.Infer,
                        Sharade.Translator.Translator
   
   -- LANGUAGE extensions used by modules in this package.
@@ -81,7 +81,7 @@ executable Sharade
                        Sharade.Translator.Semantic.Substitutable,
                        Sharade.Translator.Semantic.Type,
                        Sharade.Translator.Semantic.TypeEnv,
-                       Sharade.Translator.Semantic.TypesEvaluation,
+                       Sharade.Translator.Semantic.Infer,
                        Sharade.Translator.Translator
 
   -- Directories containing source files.
