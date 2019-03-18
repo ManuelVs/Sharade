@@ -7,8 +7,6 @@ module Sharade.Translator.Semantic.TypesEvaluation where
   import Control.Monad.State
   import Control.Monad.Except
 
-  import Data.List (nub)
-  import Data.Foldable (foldr, foldrM)
   import qualified Data.Map as Map
   import qualified Data.Set as Set
 
@@ -28,22 +26,15 @@ module Sharade.Translator.Semantic.TypesEvaluation where
   type Infer = ExceptT TypeError (State Unique)
 
   normalize :: Scheme -> Scheme
-  normalize (Forall ts body) = Forall (fmap snd ord) (normtype body)
-    where
-      ord = zip (nub $ fv body) (fmap TV letters)
+  normalize (Forall ts body) = Forall (fmap snd ord) (normtype body) where
+    ord = zip (Set.elems $ ftv body) (fmap TV letters)
 
-      fv (TVar a)   = [a]
-      fv (TArr a b) = fv a ++ fv b
-      fv (TCon _)   = []
-      fv (TList t)  = fv t
-
-      normtype (TArr a b) = TArr (normtype a) (normtype b)
-      normtype (TCon a)   = TCon a
-      normtype (TList t)  = TList (normtype t)
-      normtype (TVar a)   =
-        case lookup a ord of
-          Just x -> TVar x
-          Nothing -> error "type variable not in signature"
+    normtype (TArr a b) = TArr (normtype a) (normtype b)
+    normtype (TCon a)   = TCon a
+    normtype (TList t)  = TList (normtype t)
+    normtype (TVar a)   = case lookup a ord of
+      Just x -> TVar x
+      Nothing -> error "type variable not in signature"
   
   lookupEnv :: TypeEnv -> VarName -> Infer (Subst, Type)
   lookupEnv (TypeEnv env) x =
