@@ -3,15 +3,15 @@
 f a = case a of
   0 -> 1 ;
   1 -> 2 ;
-  a -> a + a ;; # Name shadowing!
+  v -> a + a ;;
 
 # Factorial
 fact n = case n of
   1 -> 1 ;
-  n -> n * fact (n - 1) ;;
+  n -> n * fact (n - 1) ;; # Name shadowing!
 
 # Fibonacci
 fib n = case n of
   0 -> 1 ;
   1 -> 1 ;
-  n -> fib (n - 1) + fib (n - 2) ;;
+  n -> fib (n - 1) + fib (n - 2) ;; # Name shadowing!

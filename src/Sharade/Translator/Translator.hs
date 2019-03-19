@@ -78,8 +78,36 @@ module Sharade.Translator.Translator (
     translateExpr le ++ " <#> (" ++ translateExpr re ++ ")"
   
   translateMatch :: Match -> String
-  translateMatch (Match (PVar v) e) =
-    v ++ " -> (\\" ++ v ++ " -> " ++ translateExpr e ++ ") (return " ++ v ++ ");"
+  translateMatch (Match (PVar v) e)
+    | v `isIn` e =
+      v ++ " -> (\\" ++
+      v ++ " -> " ++ translateExpr e ++
+      ") (return " ++ v ++ ");"
+    | otherwise = v ++ " -> " ++ translateExpr e ++ ";"
+    where
+      isIn v (Lit _) = False
+      isIn v (Var v') = v == v'
+      isIn v (Ch v1 e1 e2)
+        | isIn v e1 = True
+        | v == v1 = False
+        | isIn v e2 = True
+        | otherwise = False
+      isIn v (Let v1 e1 e2)
+        | isIn v e1 = True
+        | v == v1 = False
+        | isIn v e2 = True
+        | otherwise = False
+      isIn v (Lam v' e) = v /= v' && isIn v e
+      isIn v (Fix e) = isIn v e
+      isIn v (App e1 e2) = isIn v e1 || isIn v e2
+      isIn v (Case e ms) = isIn v e || any (isInMatch v) ms
+
+      isInMatch v (Match p e) = not (isInPattern v p) && isIn v e
+      
+      isInPattern v (PVar v') = v == v'
+      isInPattern v (PLit _) = False
+      isInPattern v (PCon _ ps) = any (isInPattern v) ps
+
   translateMatch (Match p e) = translatePattern p ++ " -> " ++ translateExpr e ++ ";"
 
   translatePattern :: Pattern -> String
