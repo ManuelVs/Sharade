@@ -15,11 +15,13 @@ module Sharade.Translator.Semantic.Substitutable where
     apply _ (TCon a)       = TCon a
     apply s t@(TVar a)     = Map.findWithDefault t a s
     apply s (TList t)      = TList (apply s t)
+    apply s (TPair t1 t2)  = TPair (apply s t1) (apply s t2)
     apply s (t1 `TArr` t2) = apply s t1 `TArr` apply s t2
 
     ftv TCon{}         = Set.empty
     ftv (TVar a)       = Set.singleton a
     ftv (TList t)      = ftv t
+    ftv (TPair t1 t2)  = ftv t1 `Set.union` ftv t2
     ftv (t1 `TArr` t2) = ftv t1 `Set.union` ftv t2
 
   instance Substitutable Scheme where

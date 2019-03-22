@@ -1,5 +1,7 @@
 module Sharade.Parser.Expression where
 
+  import Control.Monad (ap)
+
   import Text.Parsec hiding (State)
   import Text.Parsec.Indent
   import Text.Parsec.Number
@@ -117,10 +119,10 @@ module Sharade.Parser.Expression where
   ------------------------------ BASIC EXPRESSIONS -----------------------------
   ------------------------------------------------------------------------------
   bexpr :: IParser Expr
-  bexpr = lambda <%> choosein <%> letin <%> caseexpr <%> fexp <%> parens expr
+  bexpr = lambda <%> choosein <%> letin <%> caseexpr <%> fexp <%> pair <%> parens expr
 
   aexp :: IParser Expr
-  aexp = num <%> variable <%> parens expr
+  aexp = num <%> charv <%> variable <%> parens expr
 
   fexp :: IParser Expr
   fexp = do
@@ -129,10 +131,20 @@ module Sharade.Parser.Expression where
 
   num :: IParser Expr
   num = do
-    r <- floating <%> floating2 False
+    eid <- decimalFloat
     spaces
-    return (Lit $ show r)
+    case eid of
+      Left i -> return (Lit (IValue $ i))
+      Right r -> return (Lit (DValue $ r))
   
+  charv :: IParser Expr
+  charv = do
+    char '\'' :: IParser Char
+    c <- anyChar
+    char '\'' :: IParser Char
+    spaces
+    return (Lit (CValue c))
+
   variable :: IParser Expr
   variable = do
     i <- identifier
@@ -166,6 +178,20 @@ module Sharade.Parser.Expression where
     e2 <- expr
     return (Let x e1 e2)
   
+  pair :: IParser Expr
+  pair = do
+    char '('
+    spaces
+    le <- expr
+    spaces
+    char ','
+    spaces
+    re <- expr
+    spaces
+    char ')'
+    spaces
+    return (App (App (Var "Pair") le) re)
+  
   caseexpr :: IParser Expr
   caseexpr = do
     reserved "case"
@@ -188,7 +214,7 @@ module Sharade.Parser.Expression where
     cs <- many alphaNum
     spaces
     return (c:cs)
-  
+
   pattern :: IParser Pattern
   pattern =
     do
@@ -197,9 +223,28 @@ module Sharade.Parser.Expression where
       return (PCon i (map PVar is))
     <%>
     do
-      r <- floating <%> floating2 False
+      eid <- decimalFloat
       spaces
-      return (PLit $ show r)
+      case eid of
+        Left i -> return (PLit (IValue $ i))
+        Right r -> return (PLit (DValue $ r))
+    <%>
+    do
+      char '\''
+      c <- anyChar
+      char '\''
+      spaces
+      return (PLit (CValue c))
+    <%>
+    do
+      char '('
+      le <- identifier
+      char ','
+      spaces
+      re <- identifier
+      char ')'
+      spaces
+      return (PCon "Pair" [PVar le, PVar re])
     <%>
     do
       i <- identifier

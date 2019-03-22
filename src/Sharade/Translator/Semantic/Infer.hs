@@ -29,10 +29,11 @@ module Sharade.Translator.Semantic.Infer where
   normalize (Forall ts body) = Forall (fmap snd ord) (normtype body) where
     ord = zip (Set.elems $ ftv body) (fmap TV letters)
 
-    normtype (TArr a b) = TArr (normtype a) (normtype b)
-    normtype (TCon a)   = TCon a
-    normtype (TList t)  = TList (normtype t)
-    normtype (TVar a)   = case lookup a ord of
+    normtype (TArr a b)  = TArr (normtype a) (normtype b)
+    normtype (TPair a b) = TPair (normtype a) (normtype b)
+    normtype (TCon a)    = TCon a
+    normtype (TList t)   = TList (normtype t)
+    normtype (TVar a)    = case lookup a ord of
       Just x -> TVar x
       Nothing -> error "type variable not in signature"
   
@@ -48,10 +49,17 @@ module Sharade.Translator.Semantic.Infer where
     s1 <- unify l l'
     s2 <- unify (apply s1 r) (apply s1 r')
     return (s2 `compose` s1)
+  unify (TPair l r) (TPair l' r')  = do
+    s1 <- unify l l'
+    s2 <- unify (apply s1 r) (apply s1 r')
+    return (s2 `compose` s1)
   unify (TList t1) (TList t2) = unify t1 t2
   unify (TVar a) t = bind a t
   unify t (TVar a) = bind a t
-  unify (TCon a) (TCon b) | a == b = return nullSubst
+  unify (TCon a) (TCon b)
+    | a == b = return nullSubst
+    | isNumber a && isNumber b = return nullSubst where
+      isNumber s = s == "Integer" || s == "Double"
   unify t1 t2 = throwError $ UnificationFail t1 t2
 
   bind ::  TVar -> Type -> Infer Subst
@@ -82,10 +90,10 @@ module Sharade.Translator.Semantic.Infer where
   generalize env t  = Forall as t
     where as = Set.toList $ ftv t `Set.difference` ftv env
 
-  typeOfLiteral :: String -> Type
-  typeOfLiteral "True" = boolType
-  typeOfLiteral "False" = boolType
-  typeOfLiteral _ = numberType
+  typeOfLiteral :: LitValue -> Type
+  typeOfLiteral (IValue _) = integerType
+  typeOfLiteral (DValue _) = doubleType
+  typeOfLiteral (CValue _) = charType
   
   infer :: TypeEnv -> Expr -> Infer (Subst, Type)
   infer _ (Lit l) = return (nullSubst, typeOfLiteral l)
@@ -137,7 +145,8 @@ module Sharade.Translator.Semantic.Infer where
         (s1, (t1', t2')) <- inferMatch (apply s env) m
         s2 <- unify (apply s1 t1) t1'
         s3 <- unify (apply s2 t2) t2'
-        return (s3 `compose` s2 `compose` s1 `compose` s, (t1', t2'))
+        let ss = s3 `compose` s2 `compose` s1 `compose` s
+        return (ss, (apply ss t1', apply ss t2'))
 
   inferMatch :: TypeEnv -> Match -> Infer (Subst, (Type, Type))
   inferMatch env (Match p e) = do
@@ -175,7 +184,7 @@ module Sharade.Translator.Semantic.Infer where
     Left err  -> Left err
     Right res -> Right $ closeOver res
 
-  closeOver :: (Map.Map TVar Type, Type) -> Scheme
+  closeOver :: (Subst, Type) -> Scheme
   closeOver (sub, ty) = normalize sc
     where sc = generalize emptyTyenv (apply sub ty)
 

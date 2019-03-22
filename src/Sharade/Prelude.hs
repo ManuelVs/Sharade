@@ -1,10 +1,13 @@
+{-# LANGUAGE MultiParamTypeClasses, FlexibleInstances #-}
+
 module Sharade.Prelude (
-  Sharing, share, results, unsafeResults,
+  Sharing(..), Shareable(..), Convertible(..), share, results, unsafeResults,
   mzero, mPlus,
   (<#>),
   mAdd, mSub, mMul, mDiv,
   mLt, mLeq, mGt, mGeq, mEq, mNeq,
   List(..), nil, cons, isEmpty, first, rest,
+  Pair(..), mPair,
   true, false
 ) where
 
@@ -12,6 +15,7 @@ module Sharade.Prelude (
   import Control.Monad.Sharing
   
   import Sharade.List
+  import Sharade.Pair
 
   mPlus :: (Sharing s) => s (s a -> s (s a -> s a))
   mPlus = return (\a -> return (\b -> mplus a b))

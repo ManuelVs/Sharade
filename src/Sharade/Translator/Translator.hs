@@ -12,6 +12,13 @@ module Sharade.Translator.Translator (
   import Sharade.Parser.Syntax
 
   translateVarExpr :: VarName -> String
+  translateVarExpr "(?)" = "mPlus"
+  translateVarExpr "Nil" = "nil"
+  translateVarExpr "Cons" = "cons"
+  translateVarExpr "True" = "true"
+  translateVarExpr "False" = "false"
+  translateVarExpr "Pair" = "mPair"
+
   translateVarExpr "(+)" = "mAdd"
   translateVarExpr "(-)" = "mSub"
   translateVarExpr "(*)" = "mMul"
@@ -22,11 +29,18 @@ module Sharade.Translator.Translator (
   translateVarExpr "(>=)" = "mGeq"
   translateVarExpr "(==)" = "mEq"
   translateVarExpr "(!=)" = "mNeq"
-  translateVarExpr "(?)" = "mPlus"
-  translateVarExpr "Nil" = "nil"
-  translateVarExpr "Cons" = "cons"
-  translateVarExpr "True" = "true"
-  translateVarExpr "False" = "false"
+
+  translateVarExpr "dAdd" = "mAdd"
+  translateVarExpr "dSub" = "mSub"
+  translateVarExpr "dMul" = "mMul"
+  translateVarExpr "dDiv" = "mDiv"
+  translateVarExpr "dLt" = "mLt"
+  translateVarExpr "dLeq" = "mLeq"
+  translateVarExpr "dGt" = "mGt"
+  translateVarExpr "dGeq" = "mGeq"
+  translateVarExpr "dEq" = "mEq"
+  translateVarExpr "dNeq" = "mNeq"
+
   translateVarExpr v = v
 
   genericTVar :: Type
@@ -35,24 +49,39 @@ module Sharade.Translator.Translator (
   preludeTypeEnv :: TypeEnv
   preludeTypeEnv = TypeEnv $ Map.fromList [
     ("(?)", Forall [TV "a"] $ TArr genericTVar (TArr genericTVar genericTVar)),
-    ("(+)", Forall [] $ TArr numberType (TArr numberType numberType)),
-    ("(-)", Forall [] $ TArr numberType (TArr numberType numberType)),
-    ("(*)", Forall [] $ TArr numberType (TArr numberType numberType)),
-    ("(/)", Forall [] $ TArr numberType (TArr numberType numberType)),
-    ("(>)", Forall [] $ TArr numberType (TArr numberType boolType)),
-    ("(>=)", Forall [] $ TArr numberType (TArr numberType boolType)),
-    ("(<)", Forall [] $ TArr numberType (TArr numberType boolType)),
-    ("(<=)", Forall [] $ TArr numberType (TArr numberType boolType)),
-    ("(==)", Forall [] $ TArr numberType (TArr numberType boolType)),
-    ("(!=)", Forall [] $ TArr numberType (TArr numberType boolType)),
     ("Nil", Forall [TV "a"] $ TList genericTVar),
     ("Cons", Forall [TV "a"] $ TArr genericTVar (TArr (TList genericTVar) (TList genericTVar))),
     ("True", Forall [] boolType),
-    ("False", Forall [] boolType)
+    ("False", Forall [] boolType),
+    ("Pair", Forall [TV "a", TV "b"] $ TArr (TVar $ TV "a") (TArr (TVar $ TV "b") (TPair (TVar $ TV "a") (TVar $ TV "b")))),
+
+    ("(+)", Forall [] $ TArr integerType (TArr integerType integerType)),
+    ("(-)", Forall [] $ TArr integerType (TArr integerType integerType)),
+    ("(*)", Forall [] $ TArr integerType (TArr integerType integerType)),
+    ("(/)", Forall [] $ TArr integerType (TArr integerType integerType)),
+    ("(>)", Forall [] $ TArr integerType (TArr integerType boolType)),
+    ("(>=)", Forall [] $ TArr integerType (TArr integerType boolType)),
+    ("(<)", Forall [] $ TArr integerType (TArr integerType boolType)),
+    ("(<=)", Forall [] $ TArr integerType (TArr integerType boolType)),
+    ("(==)", Forall [] $ TArr integerType (TArr integerType boolType)),
+    ("(!=)", Forall [] $ TArr integerType (TArr integerType boolType)),
+
+    ("dAdd", Forall [] $ TArr doubleType (TArr doubleType doubleType)),
+    ("dSub", Forall [] $ TArr doubleType (TArr doubleType doubleType)),
+    ("dMul", Forall [] $ TArr doubleType (TArr doubleType doubleType)),
+    ("dDiv", Forall [] $ TArr doubleType (TArr doubleType doubleType)),
+    ("dLt" , Forall [] $ TArr doubleType (TArr doubleType boolType)),
+    ("dLeq", Forall [] $ TArr doubleType (TArr doubleType boolType)),
+    ("dGt" , Forall [] $ TArr doubleType (TArr doubleType boolType)),
+    ("dGeq", Forall [] $ TArr doubleType (TArr doubleType boolType)),
+    ("dEq", Forall [] $ TArr doubleType (TArr doubleType boolType)),
+    ("dNeq", Forall [] $ TArr doubleType (TArr doubleType boolType))
     ]
   
   translateExpr :: Expr -> String
-  translateExpr (Lit l) = "return " ++ l
+  translateExpr (Lit (IValue i)) = "return " ++ show i
+  translateExpr (Lit (DValue d)) = "return " ++ show d
+  translateExpr (Lit (CValue c)) = "return " ++ show c
 
   translateExpr (Var v) = translateVarExpr v
 
@@ -111,7 +140,9 @@ module Sharade.Translator.Translator (
   translateMatch (Match p e) = translatePattern p ++ " -> " ++ translateExpr e ++ ";"
 
   translatePattern :: Pattern -> String
-  translatePattern (PLit l) = l
+  translatePattern (PLit (IValue i)) = show i
+  translatePattern (PLit (DValue d)) = show d
+  translatePattern (PLit (CValue c)) = show c
   translatePattern (PVar v) = v
   translatePattern (PCon c ps) =
     "(" ++  intercalate " " (c : map translatePattern ps) ++ ")"
@@ -120,13 +151,16 @@ module Sharade.Translator.Translator (
   translateType (TVar (TV v)) = "s " ++ v
   translateType (TCon "Number") = "s Double"
   translateType (TCon v) = "s " ++ v
-  translateType (TList t) = "s (List s (" ++ translateListedType t ++ "))" where
-    translateListedType (TVar (TV v)) = v
-    translateListedType (TCon "Number") = "Double"
-    translateListedType (TCon v) = v
-    translateListedType (TList t) = "(List s (" ++ translateListedType t ++ "))"
-    translateListedType (TArr lt rt) = "((" ++ translateType lt ++ ") -> " ++ translateType rt ++ ")"
   translateType (TArr lt rt) = "s ((" ++ translateType lt ++ ") -> " ++ translateType rt ++ ")"
+  translateType (TList t) = "s (List s (" ++ translateNoMonadType t ++ "))"
+  translateType (TPair lt rt) = "s (Pair s (" ++ translateNoMonadType lt ++ ") (" ++ translateNoMonadType rt ++ "))"
+
+  translateNoMonadType (TVar (TV v)) = v
+  translateNoMonadType (TCon "Number") = "Double"
+  translateNoMonadType (TCon v) = v
+  translateNoMonadType (TArr lt rt) = "((" ++ translateType lt ++ ") -> " ++ translateType rt ++ ")"
+  translateNoMonadType (TList t) = "(List s (" ++ translateNoMonadType t ++ "))"
+  translateNoMonadType (TPair lt rt) = "(Pair s (" ++ translateNoMonadType lt ++ ") (" ++ translateNoMonadType rt ++ "))"
 
   lookupTypeEnv :: TypeEnv -> VarName -> Either TypeError Scheme
   lookupTypeEnv (TypeEnv env) x = case Map.lookup x env of
