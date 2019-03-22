@@ -2,10 +2,10 @@
 # f state -> char -> state
 f s a = case s of
   0 -> case a of
-    0 -> 0 ;
-    1 -> 0 ? 1 ;;
+    'a' -> 0 ;
+    'b' -> 0 ? 1 ;;
   1 -> case a of
-    0 -> 2 ;;;
+    'a' -> 2 ;;;
 
 accept' f s as = case as of
   Nil       -> s == 2 ;
@@ -13,5 +13,4 @@ accept' f s as = case as of
 
 accept f as = accept' f 0 as ;
 
-# unsafeResults (l >>= convert) :: [[Double]]
-# unsafeResults $ accept <#> f <#> (cons <#> (return 1) <#> (cons <#> (return 0) <#> (nil)))
+# unsafeResults (accept <#> f <#> (convert "ba"))
