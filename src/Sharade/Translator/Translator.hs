@@ -19,6 +19,9 @@ module Sharade.Translator.Translator (
   translateVarExpr "False" = "false"
   translateVarExpr "Pair" = "mPair"
 
+  translateVarExpr "(&&)" = "mAnd"
+  translateVarExpr "(||)" = "mOr"
+
   translateVarExpr "(+)" = "mAdd"
   translateVarExpr "(-)" = "mSub"
   translateVarExpr "(*)" = "mMul"
@@ -54,6 +57,9 @@ module Sharade.Translator.Translator (
     ("True", Forall [] boolType),
     ("False", Forall [] boolType),
     ("Pair", Forall [TV "a", TV "b"] $ TArr (TVar $ TV "a") (TArr (TVar $ TV "b") (TPair (TVar $ TV "a") (TVar $ TV "b")))),
+
+    ("(&&)", Forall [] $ TArr boolType (TArr boolType boolType)),
+    ("(||)", Forall [] $ TArr boolType (TArr boolType boolType)),
 
     ("(+)", Forall [] $ TArr integerType (TArr integerType integerType)),
     ("(-)", Forall [] $ TArr integerType (TArr integerType integerType)),

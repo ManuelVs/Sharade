@@ -35,8 +35,13 @@ module Sharade.Parser.Expression where
     le <- expr' 4
     cont <- expr'' 3
     return (cont le)
-    
-  expr' 4 = bexpr
+  
+  expr' 4 = do
+    le <- expr' 5
+    cont <- expr'' 4
+    return (cont le)
+
+  expr' 5 = bexpr
   
   expr'' :: Int -> IParser (Expr -> Expr)
   expr'' 0 =
@@ -45,11 +50,23 @@ module Sharade.Parser.Expression where
       rexp <- expr' 1
       cont <- expr'' 0
       return (\lexp -> createExpr "?" lexp (cont rexp))
-    <%>
-    do
-      return (\e -> e)
+    <%> return (\e -> e)
   
   expr'' 1 =
+    do
+      reservedOp "&&"
+      rexp <- expr' 2
+      cont <- expr'' 1
+      return (\lexp -> createExpr "&&" lexp (cont rexp))
+    <%>
+    do
+      reservedOp "||"
+      rexp <- expr' 2
+      cont <- expr'' 1
+      return (\lexp -> createExpr "||" lexp (cont rexp))
+      <%> return (\e -> e)
+
+  expr'' 2 =
     do
       reservedOp "<"
       rexp <- expr' 3
@@ -87,31 +104,31 @@ module Sharade.Parser.Expression where
       return (\lexp -> createExpr "!=" lexp (cont rexp))
     <%> return (\e -> e)
   
-  expr'' 2 =
+  expr'' 3 =
     do
       reservedOp "+"
-      rexp <- expr' 3
-      cont <- expr'' 2
+      rexp <- expr' 4
+      cont <- expr'' 3
       return (\lexp -> createExpr "+" lexp (cont rexp))
     <%>
     do
       reservedOp "-"
-      rexp <- expr' 3
-      cont <- expr'' 2
+      rexp <- expr' 4
+      cont <- expr'' 3
       return (\lexp -> createExpr "-" lexp (cont rexp))
     <%> return (\e -> e)
   
-  expr'' 3 =
+  expr'' 4 =
     do
       reservedOp "*"
-      rexp <- expr' 4
-      cont <- expr'' 3
+      rexp <- expr' 5
+      cont <- expr'' 4
       return (\lexp -> createExpr "*" lexp (cont rexp))
     <%>
     do
       reservedOp "/"
-      rexp <- expr' 4
-      cont <- expr'' 3
+      rexp <- expr' 5
+      cont <- expr'' 4
       return (\lexp -> createExpr "/" lexp (cont rexp))
     <%> return (\e -> e)
 

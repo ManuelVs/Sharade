@@ -22,7 +22,7 @@ module Sharade.Parser.Lexer where
     , Tok.opStart         = oneOf ":!#$%&*+./<=>?@\\^|-~"
     , Tok.opLetter        = oneOf ":!#$%&*+./<=>?@\\^|-~"
     , Tok.reservedNames   = ["choose", "let", "in", "case", "of"]
-    , Tok.reservedOpNames = ["->", "\\", "=", "?", "<", "<=", ">", ">=", "==", "!=", "+", "-", "*", "/"]
+    , Tok.reservedOpNames = ["->", "\\", "=", "?", "&&", "||", "<", "<=", ">", ">=", "==", "!=", "+", "-", "*", "/"]
     , Tok.caseSensitive   = True
     }
   

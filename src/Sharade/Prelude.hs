@@ -8,7 +8,8 @@ module Sharade.Prelude (
   mLt, mLeq, mGt, mGeq, mEq, mNeq,
   List(..), nil, cons, isEmpty, first, rest,
   Pair(..), mPair,
-  true, false
+  true, false,
+  mAnd, mOr
 ) where
 
   import Control.Monad
@@ -43,3 +44,7 @@ module Sharade.Prelude (
   true, false :: (Sharing s) => s Bool
   true = return True
   false = return False
+
+  mAnd, mOr :: (Sharing s) => s (s Bool -> s (s Bool -> s Bool))
+  mAnd = return (\a -> return (\b -> (return (&&)) <*> a <*> b))
+  mOr = return (\a -> return (\b -> (return (||)) <*> a <*> b))
