@@ -65,6 +65,6 @@ module Sharade.List (
   instance (Monad m, Convertible m a b) => Convertible m (List m a) [b] where
     convert Nil         = return []
     convert (Cons x xs) = do
-      y  <- x  >>= convert
       ys <- xs >>= convert
+      y  <- x  >>= convert
       return (y:ys)
