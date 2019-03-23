@@ -1,0 +1,4 @@
+
+letter = 'a' ? 'b' ? 'c' ;
+
+word = Nil ? Cons letter word ;
