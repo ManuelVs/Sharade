@@ -139,28 +139,17 @@ module Sharade.Parser.Expression where
   bexpr = lambda <%> choosein <%> letin <%> caseexpr <%> fexp <%> pair <%> parens expr
 
   aexp :: IParser Expr
-  aexp = num <%> charv <%> variable <%> parens expr
+  aexp = litExpr <%> variable <%> parens expr
 
   fexp :: IParser Expr
   fexp = do
     fs <- many1 aexp
     return (foldl1 App fs)
 
-  num :: IParser Expr
-  num = do
-    eid <- decimalFloat
-    spaces
-    case eid of
-      Left i -> return (Lit (IValue $ i))
-      Right r -> return (Lit (DValue $ r))
-  
-  charv :: IParser Expr
-  charv = do
-    char '\'' :: IParser Char
-    c <- anyChar
-    char '\'' :: IParser Char
-    spaces
-    return (Lit (CValue c))
+  litExpr :: IParser Expr
+  litExpr = do
+    l <- litValue
+    return (Lit l)
 
   variable :: IParser Expr
   variable = do
@@ -196,17 +185,10 @@ module Sharade.Parser.Expression where
     return (Let x e1 e2)
   
   pair :: IParser Expr
-  pair = do
-    char '('
-    spaces
+  pair = parens $ do
     le <- expr
-    spaces
-    char ','
-    spaces
+    reservedOp ","
     re <- expr
-    spaces
-    char ')'
-    spaces
     return (App (App (Var "Pair") le) re)
   
   caseexpr :: IParser Expr
@@ -240,29 +222,32 @@ module Sharade.Parser.Expression where
       return (PCon i (map PVar is))
     <%>
     do
+      l <- litValue
+      return (PLit l)
+    <%>
+    do
+      i <- identifier
+      return (PVar i)
+    <%>
+    parens (do
+      le <- identifier
+      reservedOp ","
+      re <- identifier
+      return (PCon "Pair" [PVar le, PVar re])
+    )
+  
+  litValue :: IParser LitValue
+  litValue =
+    do
       eid <- decimalFloat
       spaces
       case eid of
-        Left i -> return (PLit (IValue $ i))
-        Right r -> return (PLit (DValue $ r))
+        Left i -> return (IValue $ i)
+        Right r -> return (DValue $ r)
     <%>
     do
       char '\''
       c <- anyChar
       char '\''
       spaces
-      return (PLit (CValue c))
-    <%>
-    do
-      char '('
-      le <- identifier
-      char ','
-      spaces
-      re <- identifier
-      char ')'
-      spaces
-      return (PCon "Pair" [PVar le, PVar re])
-    <%>
-    do
-      i <- identifier
-      return (PVar i)
+      return (CValue c)
