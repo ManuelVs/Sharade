@@ -2,3 +2,18 @@
 letter = 'a' ? 'b' ? 'c' ;
 
 word = Nil ? Cons letter word ;
+
+concatenate xs ys = case xs of
+  Nil -> ys ;
+  Cons x xs -> Cons x (concatenate xs ys) ;;
+
+reverse' xs ys = case xs of
+  Nil -> ys ;
+  Cons x xs -> reverse' xs (Cons x ys) ;;
+
+mreverse xs = reverse' xs Nil ;
+
+palindrome = choose w = word in concatenate w (mreverse w) ;
+
+# unsafeResults (word >>= convert) :: [[Char]]
+# unsafeResults (palindrome >>= convert) :: [[Char]]
