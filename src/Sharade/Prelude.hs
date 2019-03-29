@@ -1,7 +1,7 @@
 {-# LANGUAGE MultiParamTypeClasses, FlexibleInstances #-}
 
 module Sharade.Prelude (
-  Sharing(..), Shareable(..), Convertible(..), share, results, unsafeResults,
+  Sharing(..), Shareable(..), Convertible(..), results, unsafeResults,
   mzero, mPlus,
   (<#>),
   mAdd, mSub, mMul, mDiv,

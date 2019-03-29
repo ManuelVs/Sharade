@@ -139,7 +139,7 @@ module Sharade.Translator.Semantic.Infer where
     tem <- fresh
     (s1, te) <- infer env e
     (s2, (te', tem')) <- foldM inferStep (s1, (te, tem)) ms
-    return (s2, tem')
+    return (s2, apply s2 tem)
     where
       inferStep (s, (t1, t2)) m = do
         (s1, (t1', t2')) <- inferMatch (apply s env) m
@@ -166,7 +166,7 @@ module Sharade.Translator.Semantic.Infer where
         tv <- fresh
         (env', tp) <- inferPattern env p
         s <- unify tc (TArr tp tv)
-        return (env', apply s tv)
+        return (apply s env', apply s tv)
 
   inferPrim :: TypeEnv -> [Expr] -> Type -> Infer (Subst, Type)
   inferPrim env l t = do
