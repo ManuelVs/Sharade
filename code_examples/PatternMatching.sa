@@ -1,17 +1,17 @@
 
-# Pattern matching in case expression
+-- Pattern matching in case expression
 f a = case a of
   0 -> 1 ;
   1 -> 2 ;
   v -> a + a ;;
 
-# Factorial
+-- Factorial
 fact n = case n of
   1 -> 1 ;
-  n -> n * fact (n - 1) ;; # Name shadowing!
+  n -> n * fact (n - 1) ;; -- Name shadowing!
 
-# Fibonacci
+-- Fibonacci
 fib n = case n of
   0 -> 1 ;
   1 -> 1 ;
-  n -> fib (n - 1) + fib (n - 2) ;; # Name shadowing!
+  n -> fib (n - 1) + fib (n - 2) ;; -- Name shadowing!

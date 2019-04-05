@@ -15,5 +15,8 @@ mreverse xs = reverse' xs Nil ;
 
 palindrome = choose w = word in concatenate w (mreverse w) ;
 
-# unsafeResults (word >>= convert) :: [[Char]]
-# unsafeResults (palindrome >>= convert) :: [[Char]]
+-- This need to be unsafe because the Set type on Haskell is strict. In other
+-- words, we cannot use lazy evaluation.
+
+-- unsafeResults (word >>= convert) :: [[Char]]
+-- unsafeResults (palindrome >>= convert) :: [[Char]]

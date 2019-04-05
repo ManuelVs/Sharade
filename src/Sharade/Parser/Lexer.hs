@@ -15,7 +15,7 @@ module Sharade.Parser.Lexer where
   langDef = Tok.LanguageDef
     { Tok.commentStart    = "{-"
     , Tok.commentEnd      = "-}"
-    , Tok.commentLine     = "#"
+    , Tok.commentLine     = "--"
     , Tok.nestedComments  = True
     , Tok.identStart      = letter
     , Tok.identLetter     = alphaNum <|> oneOf "_'"

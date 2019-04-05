@@ -1,16 +1,16 @@
 
-# Simple functions
+-- Simple functions
 f a b = a + b ;
 g a b = a * b ;
 
-# High-order function. Applies a function to two arguments
+-- High-order function. Applies a function to two arguments
 h z a b = z a b ;
 
-# Combination of high-order and non-determinism
+-- Combination of high-order and non-determinism
 t1 = h (f ? g) 5 8 ;
 
-# Combination of high-order, non-determinism and sharing
-# The results values should be
-# (1 + 2) + (1 + 2) = 6
-# (1 * 2) * (1 * 2) = 4
+-- Combination of high-order, non-determinism and sharing
+-- The results values should be
+-- (1 + 2) + (1 + 2) = 6
+-- (1 * 2) * (1 * 2) = 4
 t2 = choose f' = f ? g in f' (f' 1 2) (f' 1 2) ;

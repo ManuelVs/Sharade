@@ -1,5 +1,5 @@
 
-# f state -> char -> state
+-- f state -> char -> state
 f s a = case s of
   0 -> case a of
     'a' -> 0 ;
@@ -13,4 +13,4 @@ accept' f s as = case as of
 
 accept f as = accept' f 0 as ;
 
-# unsafeResults (accept <#> f <#> (convert "ba"))
+-- results (accept <#> f <#> (convert "ba"))

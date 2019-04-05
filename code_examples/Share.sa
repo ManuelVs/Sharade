@@ -1,6 +1,6 @@
 
-# Numbers
+-- Numbers
 number = 1 ? 2 ? 3 ? 4 ;
 
-# Share add of two numbers
+-- Share add of two numbers
 number' = choose n = number in n + n ;
