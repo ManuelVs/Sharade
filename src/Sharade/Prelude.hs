@@ -46,5 +46,5 @@ module Sharade.Prelude (
   false = return False
 
   mAnd, mOr :: (Sharing s) => s (s Bool -> s (s Bool -> s Bool))
-  mAnd = return (\a -> return (\b -> (return (&&)) <*> a <*> b))
-  mOr = return (\a -> return (\b -> (return (||)) <*> a <*> b))
+  mAnd = return (\a -> return (\b -> a >>= (\a' -> if a' then b else false)))
+  mOr = return (\a -> return (\b -> a >>= (\a' -> if not a' then b else true)))
