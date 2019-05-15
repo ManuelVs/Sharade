@@ -15,8 +15,16 @@ mreverse xs = reverse' xs Nil ;
 
 palindrome = choose w = word in concatenate w (mreverse w) ;
 
+mlength xs = case xs of
+  Nil -> 0 ;
+  Cons x xs -> 1 + mlength xs ;;
+
+e1 = choose p = palindrome in case mlength p == 4 of
+  True -> p ;;
+
 -- This need to be unsafe because the Set type on Haskell is strict. In other
--- words, we cannot use lazy evaluation.
+-- words, if we need to observe a infinite nondeterministic computation, we need
+-- to use some data structure that supports lazy evaluation.
 
 -- unsafeResults (word >>= convert) :: [[Char]]
 -- unsafeResults (palindrome >>= convert) :: [[Char]]

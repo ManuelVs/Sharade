@@ -1,0 +1,19 @@
+f x y = y ;
+mrepeat x = Cons x (mrepeat x) ;
+mtake x xs = case x of
+  0 -> Nil ;
+  n -> case xs of
+    Nil -> Nil ;
+    Cons y ys -> Cons y (mtake (n - 1) ys) ;;;
+
+coin = 0 ? 1 ;
+
+e0 = f (1/0 ? 2/0) 0 ;
+e1 = mtake 3 (mrepeat coin) ;
+e2 = choose c = coin in mtake 3 (mrepeat c) ;
+e3 = let c = coin in mtake 3 (mrepeat c) ;
+
+-- unsafeResults $ e0 :: [Integer]
+-- unsafeResults $ e1 >>= convert :: [[Integer]]
+-- unsafeResults $ e2 >>= convert :: [[Integer]]
+-- unsafeResults $ e3 >>= convert :: [[Integer]]
