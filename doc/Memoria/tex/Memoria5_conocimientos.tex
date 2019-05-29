@@ -1,0 +1,464 @@
+\documentclass[class=article, crop=false]{standalone}
+\usepackage[utf8]{inputenc}
+\usepackage[spanish]{babel}
+\usepackage{minted}
+\usepackage{xcolor}
+
+\definecolor{bg}{rgb}{0.95,0.95,0.95}
+
+\begin{document}
+
+\section{Conocimientos previos}\label{sec:con_prev}
+En este apartado explicaremos conceptos que son necesarios para un buen entendimiento de este
+trabajo, ya que hacemos uso de una programación monádica muy intensiva. Creemos que un
+programador aficionado no tiene por qué conocer los detalles ni tener soltura implementando
+instancias de las clases de tipos que veremos, por lo que intentaremos hacer una progresión
+de menor a mayor dificultad. Algún ejemplo puede resultar un reto entenderlo, sobre todo si
+nunca se ha tratado con este tipo de programación con anterioridad.
+
+Muchas de las explicaciones de este punto están remotamente inspiradas en el libro\textit{
+Learn You a Haskell for Great Good}\cite{Lipovaca:2011:LYH:2018642}. El código de ejemplo y
+las explicaciones son de mi puño y letra, pero he tomado prestadas algunas comparaciones como
+`caja' para poder hacer la explicación mas entendible para las personas que no están
+acostumbradas al paradigma de la programación funcional.
+
+\subsection{Clases de tipos}
+Las clases de tipos en Haskell son agrupaciones de tipos que tienen la característica común
+de que implementan una serie de funciones. Por ejemplo, \verb`Int` o \verb`Double` pertenecen
+a la clase de tipos \verb`Num`, tienen en común que implementan las funciones suma,
+multiplicación, resta, valor absoluto...
+
+Dicho de otra manera, las clases de tipos son una especie de interfaz que implementa algún
+tipo concreto, añadiendole alguna funcionalidad. No hay que confundir las clases de tipo con
+las clases de Java o C++, no tiene nada que ver. Una comparación mas idónea sería decir que
+son como las interfaces de Java, pero en mi opinión las clases de tipos son más potentes.
+
+\subsection{Familias de tipos, \textit{Kinds}}
+También es conveniente entender cómo funcionan los tipos en Haskell. Los tipos en Haskell
+pertenecen a familias de tipos. La familia de \verb`Int` o de \verb`Double` o de \verb`[Int]`
+es \verb`*`. Un asterisco quiere decir que es un tipo concreto. Por ejemplo, la familia de
+\verb`[]`, las listas, es \verb`* -> *`, es decir, necesita un tipo concreto para dar otro
+tipo concreto. De este modo, la familia de \verb`Either` es \verb`* -> * -> *`, necesita dos
+tipos concretos para dar otro. Es parecido al tipo de las funciones, donde \verb`Int -> Int`
+representa un tipo funcional que espera un \verb`Int` para dar un \verb`Int`, solo que en
+este caso solo existe un tipo básico, \verb`*`. Se puede ver que esta semántica no tiene la
+misma riqueza que la semántica de los tipos de Haskell, donde existen múltiples variables de
+tipos (\verb`a`, \verb`b`...) al contrario que esta, donde solo tenemos el asterisco.
+
+Hay que remarcar que no se debe confundir las familias de tipos con las clases de tipos. Una
+clase de tipos es por ejemplo \verb`Num`, \verb`Fractional`. Rizando el rizo, las siguientes
+son clases de constructoras de tipos. Se llaman así porque, por ejemplo, se puede entender
+que \verb`[]` es una constructora de tipos, igual que \verb`Either`. Así, en vez de ser
+simples clases de tipos, se convierten en clases de constructoras de tipos.
+
+Podríamos dar una vuelta de tuerca más y explicar que las familias de tipos también tienen
+su sistema de tipos especial, ya que esperan una familia de tipos concreta, pero no es el
+objetivo de este trabajo por lo que no creo que tengan mucho interés. Eso sin contar que,
+hasta donde llegan mis conocimientos de Haskell, no hay sistemas superiores de tipos que
+esperen como argumentos familias de tipos.
+
+\subsection{Funtores}
+Los funtores, \verb`Functor` en inglés, es una clase de constructora de tipos de Haskell
+definida de la siguiente forma:
+
+\begin{minted}[bgcolor=bg]{haskell}
+class Functor (f :: * -> *) where
+  fmap :: (a -> b) -> f a -> f b
+\end{minted}
+
+Define una función \verb`fmap` que necesita una función que mueva elementos del tipo \verb`a`
+a elementos del tipo \verb`b`, un valor de tipo \verb`f a` y devuelve un \verb`f b`. Como se
+puede ver, \verb`f` es un tipo que pertenece a la familia \verb`* -> *`, es decir, necesita
+un tipo para ser un tipo concreto. Hay muchas constructoras de tipos que pertenecen a esta
+clase, como la del tipo de las listas o la constructora de tipos \verb`Maybe`.
+
+\begin{minted}[bgcolor=bg]{haskell}
+instance Functor [] where
+  fmap = map
+
+instance Functor Maybe where
+  fmap _ Nothing = Nothing
+  fmap f (Just x) = Just (f x)
+\end{minted}
+
+Efectivamente, la función \verb`fmap` para las listas es exactamente la función \verb`map`,
+que en este caso, el funtor \verb`f` es \verb`[]`. Conceptualmente, \verb`map` hace lo que
+tiene que hacer \verb`fmap`, mover valores dentro de un funtor de un tipo a otro, dicho de
+otra manera, transformar una lista de elementos de \verb`a` a otra lista de elementos de
+\verb`b`.
+
+Se puede entender los tipos de esta clase de tipos como cajas que encierran un tipo. Por
+ejemplo, \verb`[]` es una caja que encierra un tipo, \verb`Maybe` también. Esta analogía de
+las cajas es bastante usada en la literatura, y la usaré más veces explicando las demás
+clases de tipos.
+
+Otro ejemplo sería el caso de \verb`Either a b`. No se puede conseguir meter este tipo en la
+clase \verb`Functor` con los dos valores, ya que es obligado que pertenezca a la familia de
+tipos \verb`* -> *`. Pero como también existe aplicación parcial en las constructoras de
+tipos, se puede meter el tipo \verb`(Either a)`' en la clase \verb`Functor`:
+
+\begin{minted}[bgcolor=bg]{haskell}
+instance (Either a) where
+  fmap _ (Left a)  = Left a
+  fmap f (Right b) = Right (f b)
+\end{minted}
+
+\subsection{Funtores aplicativos}
+Podemos `bajar' de alguna manera en la jerarquía de las clases de tipos, encontrándonos con
+los funtores aplicativos. Se llaman aplicativos porque es un funtor que se puede aplicar,
+es decir, la función se recibe dentro de una `caja', ¡dentro de un funtor! El valor también
+se recibe dentro de una caja. Veamos cómo está declarada esta clase:
+
+\begin{minted}[bgcolor=bg]{haskell}
+class Functor f => Applicative (f :: * -> *) where
+  pure :: a -> f a
+  (<*>) :: f (a -> b) -> f a -> f b
+\end{minted}
+
+Antes de estar en la clase de los funtores aplicativos, un requisito es ser un funtor. Para
+terminar de serlo, hay que tener implementadas dos funciones, \verb`pure` y el operador
+infijo \verb`<*>`. \verb`pure` es simplemente una función que recibe un valor tradicional y
+lo devuelve metido en una caja. El operador \verb`(<*>)`, primo hermano de \verb`fmap`,
+recibe una función metida en una caja, un valor metido en una caja y devuelve un valor
+encerrado en una caja aplicando la función. Veamos cómo se implementa la pertenencia a esta
+clase para algunos tipos:
+
+\begin{minted}[bgcolor=bg]{haskell}
+instance Applicative Maybe where
+  pure x = Just x
+  (<*>) Nothing _ = Nothing
+  (<*>) _ Nothing = Nothing
+  (<*>) (Just f) (Just x) = Just (f x)
+  --(Just f) <*> x = fmap f x -- Otra implementación posible
+
+instance Applicative [] where
+  pure x = [x]
+  fs <*> xs = concatMap (\f -> map f xs) fs
+
+instance Applicative ((->) c) where
+  pure x = (\c -> x)
+  f <*> f' = (\c -> f c (f' c))
+\end{minted}
+
+El más sencillo es el primero, la implementación de \verb`Maybe`. Si la función o el valor
+son Nothing, el resultado es Nothing, ya que nos faltan argumentos con los que trabajar. Si
+tenemos los valores, los sacamos de sus respectivas cajas, aplicamos la función y volvemos a
+meter en una caja el resultado.
+
+La lista es más complicada. Por la izquierda, \verb`fs`, recibimos una lista de funciones,
+por la derecha, \verb`xs`, una lista de valores. Tenemos que aplicar cada función a todos los
+valores. Para ello hacemos un \verb`map` con cada función y luego concatenamos todas las
+listas generadas.
+
+El ejemplo más complicado, si duda, es el tercero. \verb`(->)` es una constructora primitiva
+de Haskell que crea tipos funcionales. Necesita dos tipos, el tipo origen y el tipo destino.
+Por ejemplo, \verb`(+) :: Int -> (Int -> Int)`. Así, \verb`((->) c)` es una aplicación
+parcial de la constructora de tipos. De este modo, su familia de tipos es \verb`* -> *`, por
+lo que es apto para ser un funtor aplicativo. De la declaración de tipo de \verb`(<*>)` se
+deduce que \verb`f :: c -> a -> b`, \verb`f' :: c -> a`, por lo tanto el tipo del resultado
+debe ser \verb`c -> b`, una función. Así, primero aplicamos \verb`f' c :: a`, después
+aplicamos \verb`((f c :: a -> b) (f' c :: a))`, que unido a la lambda expresión que engloba a
+todo, se obtiene el tipo \verb`c -> b`, como se quería. Visto así puede ser complicado,
+veamos un ejemplo no muy práctico con números, donde \verb`a, b, c :: Int`:
+
+\verb`((+) <*> (\a -> a + 10)) 3` \\
+\verb`= (\c -> (c+) ((\a -> a + 10) c) 3` \\
+\verb`= (\c -> (c+) (c+10)) 3` \\
+\verb`= (3+) (13) = 16`
+
+Este ejemplo viene bien como entrenamiento para lo que viene, ya que en las mónadas con
+estado se usan funciones para `esconder' valores, aprovechando las características de
+memoización de Haskell, de la misma manera que en un lenguaje funcional sin evaluación
+perezosa se puede conseguir el mismo efecto pasando funciones. En el ejemplo, creamos una
+lambda para recuperar el valor \verb`c`.
+
+\subsection{Mónadas}
+Podemos seguir bajando en la jerarquía de clases de tipos para encontrarnos con las mónadas.
+Para seguir con la casuística de meter cosas en cajas, ahora la función no está metida en una
+caja... ¡pero devuelve un valor metido en una caja! Veamos la declaración de la clase:
+
+\begin{minted}[bgcolor=bg]{haskell}
+class Applicative m => Monad (m :: * -> *) where
+  return :: a -> m a
+  (>>=) :: m a -> (a -> m b) -> m b
+\end{minted}
+
+Como antes, para ser una mónada es requisito indispensable ser un funtor aplicativo. Si antes
+había que implementar la función prima hermana de \verb`fmap`, ahora hay que implementar la
+primo-segunda, \verb`(>>=)`. Ahora la función recibe un valor metido en una caja y una
+función que recibe un valor y devuelve otro metido en una caja. Devuelve esa caja intacta. La
+función \verb`return` es exactamente igual que \verb`pure`. Veamos algunas implementaciones:
+
+\begin{minted}[bgcolor=bg]{haskell}
+instance Monad Maybe where
+  return x = pure
+  Nothing >>= _  = Nothing
+  (Just x) >>= f = f x
+
+instance Monad [] where
+  return x = pure
+  [] >>= _ = []
+  (x:xs) >>= f = f x ++ xs >>= f
+
+instance Monad (Either a) where
+  return = pure
+  (Left l) >>= _  = Left l
+  (Right r) >>= f = f r
+\end{minted}
+
+Las mónadas permiten, entre otras cosas, escribir bibliotecas modulares y trabajar de una
+forma elegante con errores en Haskell. Por ejemplo, la implementación de una pila usando
+Maybe para devolver Nothing en caso de errores:
+
+\begin{minted}[bgcolor=bg]{haskell}
+data Stack a = Stack [a]
+
+emptyStack :: Maybe (Stack a)
+emptyStack = Just (Stack [])
+
+push :: a -> Stack a -> Maybe (Stack a)
+push x (Stack xs) = Just (Stack (x:xs))
+
+pop :: Stack a -> Maybe (Stack a)
+pop (Stack []) = fail "Empty Stack" -- Generación de error
+pop (Stack (x:xs)) = Just (Stack xs)
+
+top :: Stack a -> Maybe a
+top (Stack []) = fail "Empty Stack" -- Generación de error
+top (Stack (x:xs)) = Just x
+
+ejemplo :: Maybe (Stack Int)
+ejemplo = emptyStack >>= push 1 >>= push 2 >>= pop >>= pop
+\end{minted}
+
+Ha aparecido una nueva función, \verb`fail`. Esta función recibe un string y devuelve un
+valor monádico. Con la mónada \verb`Maybe`, esta función simplemente devuelve \verb`Nothing`,
+pero otras mónadas más complejas podrían llevar la traza del error. Por ejemplo, en la
+biblioteca \verb`parsec` se sigue esta filosofía. Los errores y el estado en en análisis se
+llevan a cabo con una unión de mónadas (que forman una mónada), cada una ocupándose de su
+tarea. Lo ideal es adaptar el código para que use cualquier tipo de mónada, dando al usuario
+de tu biblioteca una gran flexibilidad y facilidad para usar tu código en cualquier parte. La
+biblioteca \verb`parsec` también permite esto, bajo ciertas condiciones, lo que permite que
+se desarrollen ciertas funcionalidades encima de ésta que pueden facilitar mucho el análisis.
+En concreto, se usan las \verb`MonadTransformer`, que permiten la composición de mónadas.
+
+Otro aspecto secundario (pues es mera sintaxis) pero importante en la programación monádica
+en Haskell es la introducción de la notación \verb`do`, que permite de forma elegante traer
+la programación imperativa a Haskell. Así, otra posible función ejemplo para nuestro código
+podría ser:
+
+\begin{minted}[bgcolor=bg]{haskell}
+ejemplo :: Stack Int -> Maybe (Stack Int)
+ejemplo stack = do
+  valor1 <- top stack
+  stack  <- pop stack
+  valor2 <- top stack
+  stack  <- pop stack
+  push (valor1 + valor2) stack
+\end{minted}
+
+Saca dos valores de la pila, los suma y deposita el resultado. Para terminar, la notación
+\verb`do` es solo azúcar sintáctico: \\
+La expresión \\
+\verb`do { v1 <- e1 ; v2 <- e2 ; en }` \\
+se transforma en \\
+\verb`e1 >>= (\v1 -> e2 >>= (\v2 -> en))`.
+
+\subsection{Mónadas 'Plus'}
+Como dice el nombre, las mónadas `plus' no son más que mónadas ampliadas con dos simples
+operaciones. Estas dos operaciones serán muy útiles para la programación no determinista que
+tenemos entre manos. Veamos cómo está definida:
+
+\begin{minted}[bgcolor=bg]{haskell}
+class (Alternative m, Monad m) => MonadPlus (m :: * -> *) where
+  mzero :: m a
+  mplus :: m a -> m a -> m a
+\end{minted}
+
+No hay que prestar especial atención a la clase Alternative, es, en casi todos los casos,
+exactamente igual que esta clase. Para estar en la clase \verb`MonadPlus`, hay que estar en
+la clase Monad e implementar dos operaciones. La primera operación, \verb`mzero`, debe ser
+una función que retorne un valor vacío, por defecto, para esa mónada. La función \verb`mplus`
+debe ser una función que tome dos valores monádicos y devuelva otro que represente la unión
+de los dos primeros. La implementación para algunos tipos es como sigue:
+
+\begin{minted}[bgcolor=bg]{haskell}
+instance MonadPlus [] where
+  mzero = []
+  mplus a b = a ++ b
+
+instance MonadPlus Maybe where
+  mzero = Nothing
+  mplus Nothing b = b
+  mplus a Nothing = a
+  mplus a b = a
+\end{minted}
+
+Usaremos estas operaciones para implementar algunas características de la programación no
+determinista, por ejemplo, la elección de dos valores. \verb`a?b` en Sharade se traducirá
+como \\ \verb`mplus (return a) (return b)`, el cómputo vacío, cuando no hay ningún resultado,
+se representará con \verb`mzero`. Esta situación se puede dar en una expresión \verb`case`
+cuando no se encaja en ningún patrón. Haskell en esos casos hace saltar una excepción. En la
+biblioteca explicit-sharing se extiende además la clase MonadPlus para permitir otra
+operación, \verb`share`, para permitir que en una expresión el valor de una variable se
+comparta entre todas las apariciones de esa variable. Más adelante veremos cual es la mónada
+que se usa para evaluar estos cómputos no deterministas.
+
+\subsection{Mónadas con estado}
+Podemos pensar las mónadas con estado como mónadas normales pero que además de un valor
+tienen un estado `oculto'. Veamos como se define la clase y su implementación para el tipo
+\verb`State`:
+
+\begin{minted}[bgcolor=bg]{haskell}
+class Monad m => MonadState s (m :: * -> *) | m -> s where
+  get :: m s
+  put :: s -> m ()
+\end{minted}
+
+La función \verb`get` obtiene el estado oculto y lo pone como valor, así lo podremos
+obtener fácilmente en la notación \verb`do`. La función \verb`put` recibe un valor del tipo
+\verb`s` (el tipo del estado), lo oculta y encierra el valor \verb`()`. Vamos a ver cómo se
+implementa la pertenencia a esta clase para un tipo concreto:
+
+\begin{minted}[bgcolor=bg]{haskell}
+{-# LANGUAGE FlexibleInstances, MultiParamTypeClasses #-}
+import Control.Monad.State hiding (State)
+
+data State s a = State { runState :: s -> (a, s) }
+\end{minted}
+
+Como anotación, \verb`FlexibleInstances` y \verb`MultiParamTypeClasses` son dos extensiones
+del lenguaje de las muchas que hay en Haskell. \verb`FlexibleInstances` permite que las
+instancias de las clases no tengan que ser obligatoriamente un constructor de tipos y
+opcionalmente una lista de variables de tipos. Por ejemplo, la instancia \verb`Num (Maybe a)`
+está permitida pero no \verb`Num (Maybe Int)`, ya que \verb`Int` no es una variable de tipo.
+La segunda extensión permite que las clases de tipos reciban varios argumentos, como
+\verb`MonadState`. Así, gracias a estas dos extensiones se puede implementar la instancia
+\verb`MonadState s (State s)`. La primera permite que aparezca \verb`State s`, ya que sin
+ella la variable de tipos \verb`s` no puede volver a aparecer y la segunda permite que haya
+más de un argumento para la clase de tipos.
+
+Esta es la definición de nuestro tipo. Nuestro tipo \verb`State` encierra un estado y un
+valor en una función. Esta función tiene como objetivo hacer las modificaciones necesarias al
+estado. Puede ser tan sencillo como dejar el estado intacto tal y como lo recibe. El valor
+tiene que ser dado desde fuera, igual que es dado desde fuera en Maybe, las listas...
+
+\begin{minted}[bgcolor=bg]{haskell}
+instance Functor (State s) where
+  -- f :: a -> b
+  -- sf :: s -> (a, s)
+  -- s, s2 :: s
+  -- v :: a
+  fmap f (State sf) = State (\s ->
+    let (v, s2) = sf s
+    in (f v, s2))
+\end{minted}
+
+\verb`fmap` está implementada de la siguiente forma. Se obtiene la función de dentro del
+\verb`State` que se recibe, \verb`sf` y se crea un nuevo \verb`State` con una nueva función.
+Esta función, como todas, recibe un estado, se aplica \verb`sf` a ese estado, se obtiene un
+valor y un nuevo estado. Tenemos que transformar el valor obtenido con la función \verb`f` y
+devolverlo conjunto al nuevo estado generado.
+
+\begin{minted}[bgcolor=bg]{haskell}
+instance Applicative (State s) where
+  pure a = State (\s -> (a, s))
+
+  -- f  :: s ->  (a -> b, s)
+  -- sf :: s -> (a, s)
+  -- f' :: a -> b
+  -- v2 :: a
+  -- s, s2, s3 :: s
+  (State f) <*> (State sf) = State (\s ->
+    let (f', s2) = f s
+        (v2, s3) = sf s2
+        in (f' v2, s3))
+\end{minted}
+
+En este caso, recibimos una función dentro de un \verb`State`. Tenemos que hacer lo mismo de
+antes, aplicar la función al valor de la derecha, pero con más cuidado. Para obtener la
+función, aplicamos \verb`f` a \verb`s`. Una vez conseguida la función, hacemos lo mismo que
+\verb`fmap`, ¡incluso podríamos copiar y pegar! Si no fuera por los nombres de las
+variables...
+
+\begin{minted}[bgcolor=bg]{haskell}  
+instance Monad (State s) where
+  return = pure
+
+  -- sf :: s -> (a, s)
+  -- f :: a -> State s b
+  -- s, s1 :: s
+  -- v :: a
+  -- f' :: s -> (b, s)
+  (State sf) >>= f = State (\s ->
+    let (v, s1) = sf s
+        State f' = f v
+        in f' s1)
+\end{minted}
+
+Puede que este sea más sencillo. Como siempre, tenemos que aplicar la función al estado que
+viene. Después, aplicamos la función al valor obtenido, obteniendo de nuevo un \verb`State`.
+Finalmente aplicamos la nueva función al estado anterior.
+
+\begin{minted}[bgcolor=bg]{haskell}  
+instance MonadState s (State s) where
+  get = State (\s -> (s,s))
+  put s = State (\_ -> ((),s))
+\end{minted}
+
+Implementar la nueva clase es más sencillo que todas las demás. Recordemos que \verb`get`
+tenía que poner el estado como valor sin mutarlo. Recordemos también que \verb`put` tenía que
+poner el estado que se le pasaba como argumento y vaciar el valor.
+
+Veamos un ejemplo. En este ejemplo, el estado es una lista, representando una pila. El valor
+puede ir cambiando de tipo a lo largo del programa, como con cualquier otro tipo de mónada:
+
+\begin{minted}[bgcolor=bg]{haskell}  
+push :: a -> State [a] ()
+push x = do
+  xs <- get
+  put (x:xs)
+
+pop :: State [a] a
+pop = do
+  (x:xs) <- get
+  put xs
+  return x
+
+ejemplo :: State [Int] Int
+ejemplo = do
+  -- ¡`pop` está actuando sobre 0 argumentos! Está usando el
+  -- estado oculto, gracias a las funciones `get` y `put`.
+  v1 <- pop
+  v2 <- pop
+  push (v1 + v2)
+  pop
+
+startState = [1, 2]
+main = print $ runState ejemplo startState
+\end{minted}
+
+Si evaluamos main, se muestra por pantalla \verb`(3,[])`'. El primer valor de la pareja es el
+resultado de nuestro programa y el segundo, \verb`[]` es el resultado del estado interno de
+nuestro programa. El estado inicial empezó con dos valores, se extrajeron, se sumaron, se
+depositó el resultado, y a modo de ejemplo, se sacó el resultado. Como se puede ver,
+\verb`pop` tiene cero argumentos, la función \verb`ejemplo` tampoco tiene, ¡\verb`pop` está
+cogiendo los valores del estado interno del programa! Por este motivo, y entre otros, las
+mónadas con estado son tan potentes. Permiten escribir código Haskell que dependen de un
+estado que a priori está oculto.
+
+Las \verb`MonadState` tienen una fuerte presencia en este proyecto. Se encargan de
+implementar de una manera eficiente la compartición de valores no deterministas en mi
+lenguaje, como explicaré en el siguiente punto. También se encargan de una parte importante
+del análisis sintáctico. En ese caso, el estado actúa como la cadena de caracteres que faltan
+por reconocer y los valores van cambiando dependiendo de la estructura sintáctica. Unas veces
+es una expresión, otras un número y otras el programa entero (y esperemos que ahí el estado
+sea la cadena vacía, si no hay un error sintáctico, pero de eso se encarga otra mónada).
+
+A modo de nota final, me gustaría aclarar que el tipo \verb`State` como tal no existe
+en Haskell, realmente es un alias del tipo \verb`StateT s Identity a`. \verb`StateT` es una
+mónada transformadora. Como ya he explicado de manera superficial en otros puntos, permiten
+componer varias mónadas distintas, para conseguir un buen desacoplamiento de las tareas que
+hay que hacer en el programa.
+
+\end{document}

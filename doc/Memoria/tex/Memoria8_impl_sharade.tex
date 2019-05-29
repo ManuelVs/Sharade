@@ -1,0 +1,424 @@
+\documentclass[class=article, crop=false]{standalone}
+\usepackage[utf8]{inputenc}
+\usepackage[spanish]{babel}
+\usepackage{minted}
+\usepackage{xcolor}
+\usepackage{stmaryrd}
+
+\definecolor{bg}{rgb}{0.95,0.95,0.95}
+
+\begin{document}
+
+\section{Implementación de Sharade}
+
+Toda la implementación se encuentra presente en el siguiente repositorio de GitHub:
+https://github.com/ManuelVs/Sharade.
+
+La implementación cuenta con 14 módulos y alrededor de mil líneas de código Haskell. La mayor
+parte de las líneas de código corresponden a la traducción y el análisis de tipos. Este
+relativamente pequeño tamaño resulta, en mi opción, engañoso para apreciar una gran
+dificultad. La programación en Haskell, y especialmente la programación monádica, puede ser
+extraordinariamente concisa y expresiva, requiriendo eso sí, una pericia técnica del
+programador no trivial de adquirir. Por otra parte, también hay que destacar que la
+implementación hace uso de una versión modificada de la biblioteca \verb`explicit-sharing` de
+Fischer para hacerla funcionar con las versiones actuales de Haskell. Realizar esa
+modificación nos ha exigido comprender en profundidad la biblioteca de Fischer.
+
+La implementación de \verb`Sharade` se encuentra amparada por la licencia de software libre
+\verb`MIT`. La versión modificada de la biblioteca de Fischer es completamente dominio
+público, igual que la versión original.
+
+\subsection{Sintaxis concreta de Sharade}\label{sec:sintaxis_concreta}
+
+En la sección \ref{sec:sintaxis_abstracta} presentamos las diferentes construcciones
+sintácticas consideradas en Sharade en un formato que podríamos considerar de sintaxis
+abstracta. Damos aquí la sintaxis concreta  en forma de reglas gramaticales que pueden servir
+ya de base directa a la construcción de un analizador sintáctico, que describimos en la
+sección \ref{sec:analizador_sintactico}.
+
+\begin{itemize}
+  \item[Program] $\rightarrow$ \verb`{ FunDecl }`
+  \item[FunDecl] $\rightarrow$ \verb`Identifier { Identifier } "=" Expression ";"`
+  \item[Expression] $\rightarrow$ \verb`E0`
+  \item[E0] $\rightarrow$ \verb`E1 "?" E0`
+  \item[E0] $\rightarrow$ \verb`E1`
+  \item[E1] $\rightarrow$ \verb`E2 "&&" E1 | E2 "||" E1`
+  \item[E1] $\rightarrow$ \verb`E2`
+  \item[E2] $\rightarrow$ \verb`E3 RelOperator E2`
+  \item[E2] $\rightarrow$ \verb`E3`
+  \item[E3] $\rightarrow$ \verb`E4 "+" E3 | E4 "-" E3`
+  \item[E3] $\rightarrow$ \verb`E4`
+  \item[E4] $\rightarrow$ \verb`E5 "*" E4 | E5 "/" E4`
+  \item[E4] $\rightarrow$ \verb`E5`
+  \item[E5] $\rightarrow$ \verb`Lambda | ChooseIn | LetIn | CaseExpr` \\
+                          \verb`| FExp | Pair | "(" E0 ")"`
+  \item[FExp] $\rightarrow$ \verb`Identifier { AExp }`
+  \item[AExp] $\rightarrow$ \verb`LitExpr | Variable | "(" E0 ")"`
+  \item[Lambda] $\rightarrow$ \verb`"\" Identifier "->" Expression`
+  \item[ChooseIn] $\rightarrow$ \verb`"choose" Identifier "=" Expression "in" Expression`
+  \item[LetIn] $\rightarrow$ \verb`"let" Identifier "=" Expression "in" Expression`
+  \item[Pair] $\rightarrow$ \verb`"(" Expression "," Expression ")"`
+  \item[CaseExpr] $\rightarrow$ \verb`"case" Expression "of" { CaseMatch }`
+  \item[CaseMatch] $\rightarrow$ \verb`Pattern "->" Expression ";"`
+  \item[Pattern] $\rightarrow$ \verb`Constructor { Identifier }`
+  \item[Constructor] $\rightarrow$ \verb`UpperCase { AlphaNum }`
+\end{itemize}
+
+Un identificador válido es cualquier cadena de caracteres alfanumérica que empiece por un
+carácter. El lenguaje también permite comentarios de una línea y multilínea, igual que
+Haskell. Los comentarios multilínea empiezan con `\verb`{-`' y terminan con `\verb`-}`'. Los
+comentarios de una sola línea empiezan por `\verb`--`'. La sintaxis no permite la creación de
+nuevos operadores infijos por el usuario, al contrario que Haskell\cite{marlow2010haskell}.
+La sintaxis está claramente influenciada por Haskell y Curry. En la sintaxis se incluyen
+también las primitivas necesarias para expresar el no determinismo con compartición y sin
+compartición. El operador \verb`?` expresa la elección de dos valores no deterministas y la
+estructura \verb`choose ... in ...` expresa una nueva ligadura de una expresión a un
+identificador que compartirá el valor en todas sus apariciones, cumpliendo la propiedad que
+Francisco J. Fraguas muestra en `A simple rewrite notion for call-time choice semantics'
+\cite{lopez2007simple}.
+
+\subsection{Analizador sintáctico con parsec}\label{sec:analizador_sintactico}
+
+Como ya hemos visto, la biblioteca \verb`parsec` permite especificar una gramática
+L-atribuida aprovechando todas las características de Haskell. Un inconveniente que tiene es
+que en análisis es descendente, por lo que a la hora de la implementación hay que transformar
+la gramática para evitar la recursión a izquierdas. En mi implementación no he hecho un
+cálculo de los directores, por lo que el análisis se basa en un backtracking LL0.
+
+La implementación es bastante sencilla, pero hace un uso interesante de las características
+de orden superior de Haskell. Tan solo quiero mostrar una pequeña parte de la
+implementación para enseñar cómo he llevado a cabo la transformación de la gramática de
+atributos para poder analizar descendentemente usando dichas características de orden
+superior de Haskell.
+
+\begin{minted}[bgcolor=bg]{haskell}
+createExpr :: String -> Expr -> Expr -> Expr
+createExpr op lexp rexp = (App (App (Var prefixNot) lexp) rexp)
+  where prefixNot = "(" ++ op ++ ")"
+
+expr' :: Int -> IParser Expr
+expr' 0 = do
+  le <- expr' 1
+  cont <- expr'' 0
+  return (cont le)
+
+expr'' :: Int -> IParser (Expr -> Expr)
+expr'' 0 = do
+    reservedOp "?"
+    rexp <- expr' 1
+    cont <- expr'' 0
+    return (\lexp -> createExpr "?" lexp (cont rexp))
+  <%> return (\e -> e)
+\end{minted}
+
+Esta parte del código corresponde al análisis de las expresiones con un operador infijo de
+prioridad cero, que es la máxima prioridad. En este caso es solo corresponde al operador
+\verb`(?)`, origen del indeterminismo de mi lenguaje.
+
+Como se puede ver, las definiciones auxiliares en vez de obtener un valor heredado con la
+expresión, como se haría en un analizador descendente tradicional, devuelven una función que
+espera dicha expresión. Es decir, las definiciones auxiliares analizan una función de
+Haskell. Esto puede sonar raro, pero no lo es teniendo en cuenta que empiezan reconociendo un
+operador infijo, por lo que la expresión que falta es la parte izquierda del operador. La
+otra opción, la que viene después del operador \verb`<%>` es el caso base. En este caso se
+devuelve la función identidad, análogo a devolver el valor heredado. La implementación de
+esta parte se puede encontrar en el módulo \verb`Sharade.Parser`.
+
+\subsection{Análisis de tipos}
+
+Como se ha indicado varias veces, la implementación de Sharade procede por traducción a un
+programa Haskell cuya ejecución recoge la funcionalidad esperada del programa original. La
+traducción utiliza intensivamente la programación monádica, como se ha explicado en el
+apartado \ref{sec:uso_directo}. El programa traducido, al ser Haskell, debe estar bien
+tipado. En un primer momento se podría pensar en delegar en Haskell el análisis de tipos,
+reportando su propio interpretador un error de tipos si fuese necesario. Pero debido a la
+naturaleza de la traducción (al uso intensivo de la programación monádica), se incurre
+fácilmente en ambigüedades de tipos, por lo que Haskell rechaza el programa con un caso
+particular de error de tipos. Para evitar esta situación, es necesario realizar un análisis
+de tipos sobre el programa en Sharade, con el clásico sistema de
+Hindley-Milner\cite{hindley1969principal}. En el apartado en el que se explica la traducción
+a Haskell indicaré cómo se transforman estos tipos inferidos a Haskell.
+
+Veamos los siguientes ejemplos para entender las situaciones de ambigüedad de tipos y cómo
+solucionarlas:
+
+\begin{minted}[bgcolor=bg]{haskell}
+import Control.Monad
+
+zero = return 0
+
+coin = (return 0) `mplus` (return 1)
+\end{minted}
+
+Si se intenta interpretar esto en Haskell dará un error, debido a la ambigüedad de tipos.
+Haskell podría elegir una mónada cualquiera para analizar el tipo, pero eso quebraría el
+supuesto de `mundo abierto'. Si se añadiese una nueva instancia que se ajustase mejor a la
+situación, el código que has escrito podría dejar de funcionar o ni siquiera compilar. Veamos
+el segundo ejemplo donde se ve más claro\cite{Lipovaca:2011:LYH:2018642}:
+
+\begin{minted}[bgcolor=bg]{haskell}
+main :: IO ()
+main = putStrLn (show (yesno 12))
+
+class YesNo a where
+  yesno :: a -> Bool
+  
+instance YesNo [a] where
+  yesno [] = False
+  yesno _  = True
+
+instance YesNo Int where
+  yesno 0 = False
+  yesno _ = True
+\end{minted}
+
+Este ejemplo no compilará. No sabe qué instancia coger para evaluar \verb`yesno 12`. Es
+evidente, con solo estas líneas de código, que la única instancia que encaja es
+\verb`YesNo Int`. Pero si en el futuro se añade la instancia \verb`YesNo Integer`, habría
+ambigüedad e incluso podría cambiar el comportamiento esperado del programa. Esto es lo que
+evita el supuesto del mundo abierto. Si no se sabe que puede haber otra instancia que encaje,
+el sistema de tipos dará un error de ambigüedad.
+
+Esto se puede solucionar permitiendo que las expresiones traducidas sean polimórficas, es
+decir, permitiendo que se puedan evaluar en la mónada que se desee. Para conseguir esto es
+necesario especificar directamente los tipos, por lo que es necesario un análisis de tipos de
+mi lenguaje y traducirlos correctamente a Haskell. Veamoslo en el ejemplo:
+
+\begin{minted}[bgcolor=bg]{haskell}
+import Control.Monad
+
+zero :: MonadPlus m => m Int
+zero = return 0
+
+coin :: MonadPlus m => m Int
+coin = (return 0) `mplus` (return 1)
+\end{minted}
+
+De alguna manera se está indicando a Haskell que el programa es correcto evaluando dichas
+expresiones en cualquier instancia de la clase \verb`MonadPlus`, como puede ser la
+constructora de las listas o la mónada que usa Fischer.
+
+\subsubsection{Traducción de tipos a Haskell}
+
+Tras inferir los tipos de las funciones en Sharade, es necesario traducirlos a Haskell. Como
+ya se ha dicho en anteriores ocasiones, cada tipo en Haskell debe ser monádico. En la
+traducción existen dos excepciones, que son la traducción del tipo de las listas y del tipo
+de las parejas.
+
+El tipo de una función de Sharade \verb`f :: t` se traduce a Haskell como \\
+\verb`f :: Sharing s => s (translate t)`. El tipo \verb`t` puede caer en uno de los
+siguientes casos:
+
+\begin{itemize}
+  \item[-] Un tipo primitivo \verb`p` se traduce como \verb`s p`.
+  \item[-] Una variable de tipos \verb`a` se traduce como \verb`s a`.
+  \item[-] El tipo funcional, \verb`a -> b`, se traduce como \\
+  \verb`s (translate a -> translate b)`.
+
+  \item[-] El tipo de las listas, \verb`[a]`, se traduce como \\
+  \verb`s (List s (translate' a))`.
+
+  \item[-] El tipo de las parejas, \verb`(a, b)`, se traduce como \\
+  \verb`s (Pair s (translate' a) (translate' b))`
+\end{itemize}
+
+La función de traducción \verb`translate'` se comporta como \verb`translate` pero sin poner
+delante el tipo monádico en el primer nivel de recursión, llamando a \verb`translate`
+inmediatamente.
+
+Los tipos de las listas y de las parejas se traducen de esta manera debido a que estos tipos
+en Haskell gestionan el no determinismo (y las mónadas) dentro de su implementación. Por
+ejemplo, la cola de las listas es un valor indeterminista, lo que no se conseguiría si
+simplemente fuese una lista de valores indeterministas (\verb`[s a]`). Esto tiene fuertes
+y buenas repercusiones en el funcionamiento de la evaluación perezosa de Sharade.
+
+\subsubsection{Inferencia de tipos Hindley-Milner}
+
+La familia de tipos de Hindley-Milner tiene la fantástica propiedad de tener un simple
+algoritmo para determinar los tipos de una sintaxis sin tipos. El algoritmo se basa en unas
+simples reglas para obtener el tipo de una expresión. El elemento principal de este algoritmo
+es la `unificación' de variables de tipos. Las reglas son las siguientes
+\cite{write-you-a-haskell}\cite{hindley1969principal}\cite{milner1978theory}:
+\begin{itemize}
+  \item[-] T-Var: Si `\verb`x : a`' pertenece al ámbito de tipos, entonces del ámbito de
+  tipos se puede deducir `\verb`x : a`'.
+
+  \item[-] T-App: Si `\verb`e1 : t1 -> t2`' y `\verb`e2 : t1`' pertenecen al ámbito de tipos,
+  entonces se puede deducir que \verb`e1 e2 : t2`.
+  
+  \item[-] T-Lam: Si con el ámbito de tipos y `\verb`x : t1`' se puede deducir
+  `\verb`e : t2`', entonces `\verb`\x . e : t1 -> t2`'.
+  
+  \item[-] T-Gen: Si del ámbito de tipos se deduce `\verb`e : a`' y la variable de tipo
+  `\verb`b`' no está presente en el ámbito, entonces `\verb`e : forall b . a`'.
+
+  \item[-] T-Inst: Si del ámbito de tipos se deduce `\verb`e : a`' y \verb`b` es una
+  instancia de `\verb`a`', entonces del ámbito de tipos también se deduce `\verb`e : b`'.
+\end{itemize}
+
+El ámbito de tipos es una colección de expresiones y sus tipos. La regla
+\verb`T-Var` es básica. La regla \verb`T-App` caracteriza la aplicación de una expresión de
+tipo funcional a otra expresión. Si la parte derecha es del tipo que la función espera,
+entonces el tipo de la aplicación es el resultado del tipo funcional. \verb`T-Lam` especifica
+el tipo de una función (expresión lambda). Una expresión \verb`(\x -> e)` tiene un tipo
+tipo funcional, donde el primer argumento debe tener el mismo tipo de `\verb`x`' y el
+resultado tiene el tipo de `\verb`e`'. \verb`T-Gen` expresa la generalización de un tipo. Por
+ejemplo, decir \verb`a : Int` es equivalente a decir que \verb`a : forall b . Int`, ya que
+`\verb`b`' no aparece en la parte derecha. \verb`T-Inst` caracteriza la instanciación. Por
+ejemplo una posible instanciación de la función \verb`id : a -> a` es \verb`id : Int -> Int`.
+
+La unificación de dos tipos es el proceso de inferir si estos dos tipos pueden confluir en
+uno solo, creando una sustitución en el proceso. Por ejemplo, los tipos `\verb`a`' y
+`\verb`Char`' se pueden unificar y dan como resultado la sustitución \verb`[a/Int]`. Otra
+sustitución válida sería \verb`a -> a ~ Int -> Int : [a/Int]`, para la función identidad. Se
+puede dar el caso que existan substituciones infinitas. Por ejemplo, si intentamos
+\verb`a ~ a -> b`, tenemos la sustitución `\verb`[a/a->b]`'. Si aplicamos esa sustitución,
+siempre obtendremos un tipo más grande, debido a que `\verb`a`' aparece en la parte derecha
+de la sustitución. La única sustitución posible sería \verb`a/((..((a->b)->b)..)->b)`, pero
+ni Haskell ni Curry ni Sharade tienen tipos infinitos. Debido a esto, la unificación tiene
+una precondición conocida como `occurs-check'. Si se va a unificar `\verb`a`' con `\verb`b`',
+`\verb`a`' no debe aparecer en `\verb`b`' (ni viceversa), ya que terminaría en una
+sustitución infinita. Esta parte de la implementación se puede encontrar en el módulo
+\verb`Sharade.Translator.Sharade`.
+
+\subsection{Traducción a Haskell}\label{sec:traduccion}
+
+La última etapa de la compilación es la generación de código Haskell. Para explicar la
+traducción me basaré en la sintaxis abstracta presentada en \ref{sec:sintaxis_abstracta}. En
+la traducción de cualquier expresión se cumple un invariante, las subexpresiones generadas
+son expresiones Haskell monádicas, por lo tanto nuestra función de traducción siempre debe
+generar una expresión monádica. Esto es necesario para tener presente en todo momento el
+indeterminismo. De esta manera, las expresiones funcionales pasan a estar dentro de mónadas,
+por lo que para traducir la aplicación de una función es necesario definir un operador
+auxiliar que se encargue de aplicar la función monádica a un valor monádico:
+
+\begin{minted}[bgcolor=bg]{haskell}
+infixl 4 <#>
+(<#>) :: (Sharing s) => s (s a -> s b) -> s a -> s b
+f <#> a = f >>= (\f' -> f' a)
+\end{minted}
+
+Este operador recibe una función atrapada en una mónada (que recibe valores monádicos) y un
+valor monádico. Aplica la función indeterminista (puede que sean varias) al valor
+indeterminista (puede que sean varios) y devuelve el resultado. El resultado puede ser de un
+tipo primitivo o ser un tipo funcional (encerrado en una mónada). Así, este operador se puede
+aplicar varias veces.
+
+Veamos caso a caso como funciona la traducción de una expresión. Me he ahorrado los
+paréntesis que serían necesarios en Haskell para facilitar la lectura.
+
+\begin{itemize}
+  \item[-]{\makebox[1.2cm]{$l$\hfill}} $\Rightarrow$ Un literal se traduce como
+  \verb`return l`
+  
+  \item[-]{\makebox[1.2cm]{$x$\hfill}} $\Rightarrow$ Dependiendo de la variable se traduce de
+  una forma u otra. Por ejemplo, el operador \verb`(+)` se traduce como \verb`mAdd`, el
+  operador \verb`(?)` como \verb`mPlus`. Un identificador simple se traduce sin modificación.
+  
+  \item[-]{\makebox[1.2cm]{$C$\hfill}} $\Rightarrow$ Una constructora es un caso especial de
+  variable, existe una traducción para cada constructora disponible. Por ejemplo, \verb`Cons`
+  se traduce por la función auxiliar \verb`cons`.
+
+  \item[-]{\makebox[1.2cm]{$e1 \: e2$\hfill}} $\Rightarrow$ Ambas subexpresiones son
+  monádicas, por lo tanto hay que usar el operador explicado antes,
+  \verb`translate e1 <#> translate e2`.
+
+  \item[-]{\makebox[1.2cm]{$\backslash x \rightarrow e$\hfill}} $\Rightarrow$ Una función
+  lambda es una función normal, tiene que estar metida en un valor monádico. Por lo tanto, se
+  usa la función \verb`return` sobre la traducción de la expresión:
+  \verb`return (\x -> translate e)`.
+
+  \item[-]{\makebox[1.2cm]{$e1 \:? \: e2$\hfill}}  $\Rightarrow$ Esta expresión cae en los
+  casos anteriores, traducción de una variable y dos aplicaciones funcionales. Su función
+  auxiliar es \verb`mPlus`.
+
+  \item[-]{\makebox[1.2cm]{$(e1, \: e2)$\hfill}} $\Rightarrow$ Parejas. Igual que el
+  anterior, se traduce una constructora y dos aplicaciones funcionales. Su constructora en
+  Haskell es \verb`mPair`.
+
+  \item[-]{\makebox[3.4cm]{$choose \: x = e1 \: in \: e2$\hfill}} $\Rightarrow$ Compartición
+  de una variable o expresión. Hay que usar la primitiva \verb`share` sobre la expresión y
+  añadir al ámbito la nueva variable. He decidido usar una expresión lambda para conseguir
+  este objetivo y el operador \verb`(>>=)`. Así, la traducción se hace de la siguiente
+  manera: \verb`share (translate e1) >>= (\x -> translate e2)`
+
+  \item[-]{\makebox[3.4cm]{$let \: x = e1 \: in \: e2$\hfill}} $\Rightarrow$ Una expresión
+  \verb`let` se traduce sin ninguna complicación, se puede usar la misma estructura de
+  Haskell: \\
+  \verb`let x = translate e1 in translate e2`.
+
+  \item[-]{\makebox[3.4cm]{$e1 \: (infixOp) \: e2$\hfill}} $\Rightarrow$ Una expresión con un
+  operador infijo. Como antes, debido a la representación interna de las operaciones infijas,
+  se traduce como una variable y dos aplicaciones funcionales.
+
+  \item[-]$case \: e \: of \: t1 \rightarrow e1 ; \ldots tn \rightarrow en ;$ $\Rightarrow$
+  Una expresión \verb`case` es complicada de traducir, ya que hay un caso especial en el que
+  Haskell no puede deducir los `tipos intermedios' de las expresiones, por culpa de
+  ambigüedades en las claes de tipos, dando un error en tiempo de compilación. Para traducir
+  esta expresión, uso una función auxiliar llamada \verb`translateMatch`, que traduce cada
+  uno de los casos del \verb`case`. Así, la expresión se traduce como \\
+  \verb`translate e >>= (\pec -> case pec of {`\\
+  \verb`translateMatch (t1 -> e1); ...; translateMatch (tn -> en);`\\
+  \verb`_ -> mzero;})` \\
+  Veamos cual es el funcionamiento de \verb`translateMatch`:
+  \begin{itemize}
+    \item[-]{\makebox[3.4cm]{$C \: x1 \: \ldots \: xn \: \rightarrow \: e$\hfill}}
+    $\rightarrow$ Un patrón estándar con la constructora y $n>=0$ variables se traduce sin
+    complicaciones. Se puede usar la misma estructura que en Haskell.
+    \verb`C x1 ... xn -> translate e`.
+
+    \item[-]\makebox[3.4cm]{$v \: \rightarrow \: e$\hfill} $\rightarrow$ Una simple variable
+    en el patrón. Aquí surge la complicación y además un caso especial. Hay que tener en
+    cuenta si la variable \verb`v` aparece en la expresión \verb`e`.
+    \begin{itemize}
+      \item[-] Si aparece, hay que volver a meter este valor en una mónada y crear un nuevo
+      ámbito de variables con una lambda para sustituir el anterior nombre. Así, este caso
+      se tiene que traducir como: \verb`v -> (\v -> translate e) (return v)`.
+      \item[-] Si no aparece, para evitar que la inferencia de tipos de Haskell se encuentre
+      con ambigüedades, hay que traducir este caso de la siguiente forma:
+      \verb`_ -> translate e`.
+    \end{itemize}
+  \end{itemize}
+\end{itemize}
+
+Por último, para traducir una función hay que traducir su tipo y su expresión asociada.
+Una función con argumentos se puede entender como una secuencia de expresiones lambda. Por
+lo tanto, traducir \verb`f = e` consiste en traducir su tipo, \verb`f :: translateType f` y
+su expresión, \verb`f = translate e`. Las funciones con más de un argumento se traducen como
+una sucesión de expresiones lambda.
+
+La traducción es mejorable, ya que recae muchísimo en el uso de la programación monádica
+para reflejar el indeterminismo, pero se pueden llevar a cabo optimizaciones para mejorar
+el rendimiento. El impacto en el rendimiento de la primera mejora puede ser cercana al 50\%,
+como comentaremos más adelante en el apartado de conclusiones.
+
+La primera tarea se puede realizar para evitar el uso excesivo de la programación monádica
+es tener en cuenta una consecuencia lógica de las leyes del `call-time choice' para eliminar
+por completo la compleja estructura de las funciones monádicas. Recordemos que actualmente
+una función de mi lenguaje traducida a Haskell tiene el tipo
+\verb`s (s a1 -> s (s a2 -> ... (s an)...))`. Este tipo es equivalente a
+\verb`s a1 -> ... -> s an`. Es decir, eliminamos recursivamente del tipo de la función la
+mónada que las envuelve. Esto es así ya que, según las leyes del `call-time choice', siendo
+\verb`f` y \verb`g` funciones del mismo tipo, $\llbracket C[(f \: ? \: g) \: x]\rrbracket
+\: = \: \llbracket C[f \: x]\rrbracket \: \bigcup \: \llbracket C[g \: x]\rrbracket$. Es
+decir, claramente nos da igual elegir entre las dos funciones y juntar los resultados que
+aplicar las dos funciones por separado y juntar los resultados. En la semántica
+`runtime choice' también se cumple si consideramos que todas las apariones de un
+identificador son  independientes (que es básicamente el comportamiento de esta semántica).
+
+La segunda optimización a realizar para mejorar el rendimiento es tener en cuenta en tiempo
+de compilación si una subexpresión es determinista o indeterminista. La propiedad de ser
+determinista es una propiedad semántica y por tanto típicamente indecidible, pero podrían
+usarse aproximaciones sintácticas simples basadas en el hecho de que la fuente sintáctica
+del indeterminismo es el operador \verb`(?)`. En el árbol de sintaxis abstracto se puede
+anotar esta propiedad, de manera que mientras un cómputo sea determinista no se llevará a
+cabo ninguna sobrecarga, usando funciones Haskell sin decorar, es decir, sin recurrir a la
+programación monádica. Si alguna pieza es indeterminista, hay que traducir según las reglas
+explicadas anteriormente. Esto permitiría que las piezas deterministas se ejecuten a la
+máxima velocidad y las piezas no deterministas casi inevitablemente más lentas.
+
+Estas tareas no se han llevado a cabo por la necesidad de acotar el desarrollo del lenguaje,
+ya que no se persigue la eficiencia sino mostrar una posible solución simple a la combinación
+de dos tipos de semántica y mostrar las ventajas que esto puede llegar a ofrecer.
+
+\end{document}

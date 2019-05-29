@@ -1,0 +1,541 @@
+\documentclass[class=article, crop=false]{standalone}
+\usepackage[utf8]{inputenc}
+\usepackage[spanish]{babel}
+\usepackage{minted}
+\usepackage{xcolor}
+
+\definecolor{bg}{rgb}{0.95,0.95,0.95}
+
+\begin{document}
+
+\section{Sharade}
+\subsection{Introducción}
+
+El resultado de este trabajo de fin de grado es un lenguaje funcional con características
+habituales en el paradigma de la programación funcional como el orden superior, evaluación
+perezosa, ajuste de patrones, expresiones lambda, no determinismo, semánticas de compartición
+(call-time choice) y no compartición (runtime choice). Posee la inferencia de tipos de
+Hindley-Milner pero no se pueden especificar los tipos en la declaración de las funciones. No
+tiene clases de tipos ni permite crear tipos de usuario por cuestiones explicadas más
+adelante. La sintaxis está muy influenciada por Haskell, tiene aplicación parcial (excepto
+para operadores infijos) y notación currificada. El lenguaje carece de algunos azúcares
+sintácticos habituales, por ejemplo, las listas se tienen que escribir a base de las
+constructoras \verb`Cons` y \verb`Nil`, no existe ajuste de patrones en los lados izquierdos
+de la definición de funciones, estando delegados a una  expresión \verb`case` en las
+expresiones de los lados derechos ni tampoco existen listas intensionales. No posee ninguna
+biblioteca estándar ni preludio, todas las funciones básicas deben ser programadas por el
+usuario. En cuanto a los tipos primitivos disponibles (y únicos) están los enteros, los
+reales, los caracteres, las listas y las parejas. Todo esto es debido a que se trata de un
+trabajo de fin de grado donde el objetivo era mostrar de una forma simple y clara la
+combinación de los dos tipos de semánticas. Esta combinación puede ser muy útil, ya que hay
+situaciones prácticas donde ninguna de las dos semánticas son apropiadas pero sí una
+combinación de ellas\cite{lopez2009flexible}, como veremos en los ejemplos más
+adelante. La combinación también permite describir algoritmos con mayor flexibilidad y
+otorgando más control al programador. Tal como hemos decidido definir la sintaxis, la
+combinación resulta muy sencilla y limpia, como veremos en el siguiente apartado.
+
+Existen lenguajes más avanzados con más características y con mejor rendimiento que el mío,
+como pueden ser Curry y Toy. Sharade no persigue el rendimiento (aunque con algunas
+optimizaciones puede llegar a tener un rendimiento similar) ya que su objetivo es incorporar
+a la literatura de la comunidad lógico-funcional algo nuevo, la combinación de dos semánticas
+indeterministas, el `call-time choice' y `runtime choice'. Esto se consigue, desde el punto
+de vista de la estructura del lenguaje, asumiendo por defecto un comportamiento de semántica
+de `runtime choice' y a la incorporación de una primitiva que veremos en el siguiente
+apartado mediante ejemplos.
+
+En cuanto a la implementación, que comentaremos durante capítulos sucesivos, la basaremos en
+una traducción de Sharade a Haskell que hace un uso intensivo de la programación monádica
+para expresar el indeterminismo.
+
+\subsection{Un vistazo a Sharade}
+
+En los siguientes ejemplos voy a mostrar la sntaxis y características de Sharade y cómo se
+pueden combinar entre ellas. Además, también voy a mostrar dos programas algo más elaborados,
+como la implementación de un autómata finito no determinista y un tipo de ordenación de
+listas algo peculiar, la ordenación por permutación. Este último ejemplo se usa bastante en
+la literatura para comparar el rendimiento de los lenguajes no deterministas, ya que usa
+intensivamente el indeterminismo y tiene gran carga computacional. Se basa en escoger la
+permutación ordenada de una lista.
+
+\subsubsection{No determinismo}
+
+Un ejemplo simple donde aflora el no-determinismo podría ser el siguiente:
+
+\begin{minted}[bgcolor=bg]{haskell}
+number = 1 ? 2 ? 3 ? 4 ;
+
+duplicate x = x + x ;
+\end{minted}
+
+El operador infijo `\verb`?`' es el origen del indeterminismo en Sharade. Esta definición
+significa que \verb`number` se puede reducir a uno de esos cuatro valores. La función
+\verb`duplicate` tiene un argumento, que potencialmente puede ser no determinista. Es decir,
+puede operar con un valor determinista (por ejemplo, un simple \verb`2`) o un valor no
+determinista como \verb`number`. Tradicionalmente hay dos formas de entender este programa.
+Si entiende con la semántica de `call-time choice', \verb`duplicate number` solo tendrá 4
+resultados. Sin embargo, con la semántica `runtime choice' se obtienen 16 resultados,
+provenientes de todas las combinaciones posibles de los valores de \verb`number`.
+
+Sharade por defecto opera con la semántica de `runtime choice', por lo tanto la expresión
+\verb`duplicate number` tiene 16 resultados, de los cuales 12 se repiten por la
+conmutatividad de la suma. En el siguiente ejemplo vamos a ver como podemos operar con la
+otra semántica.
+
+\subsubsection{Compartición}
+
+Para usar el otro tipo de semántica hay que introducir la primitiva `\verb`choose`'. Es una
+primitiva parecida a una expresión `\verb`let`'. Crea un nuevo ámbito con una nueva variable
+que cumplirá las leyes del `call-time choice'\cite{lopez2007simple}. Es decir, todas sus
+apariciones en una expresión se evaluarán al mismo valor.
+
+\begin{minted}[bgcolor=bg]{haskell}
+number = 1 ? 2 ? 3 ? 4 ;
+
+duplicate x = choose a = x in a + a ;
+\end{minted}
+
+En el ejemplo se está ligando la variable \verb`a` a uno de los posibles valores de \verb`x`.
+De esta forma, la expresión \verb`duplicate number` solo tiene 4 posibles valores, igual que
+en Curry.
+
+\subsubsection{Combinación de semánticas}
+
+En el siguiente ejemplo se puede ver la combinación de los dos tipos de semántica, un salto
+que ha dado Sharade:
+
+\begin{minted}[bgcolor=bg]{haskell}
+number = 1 ? 2 ? 3 ? 4 ;
+coin = 0 ? 1 ;
+
+f x y = choose a = x in a + a + y + y ;
+\end{minted}
+
+Si se evalúa \verb`duplicate number coin` existen 16 combinaciones. Esto es debido a que la
+variable `\verb`y`' está siguiendo las reglas del `runtime choice' y la variable `\verb`a`'
+las del `call-time choice'.
+
+Se puede pensar que una variable sujeta a la semántica de `call-time choice' es una variable
+normal de cualquier lenguaje, sus apariciones comparten el valor a lo largo de la expresión.
+
+Veamos otro ejemplo práctico donde además se introducen listas infinitas e infinitos
+resultados indeterministas:
+
+\begin{minted}[bgcolor=bg]{haskell}
+letter = 'a' ? 'b' ? 'c' ;
+
+word = Nil ? Cons letter word ;
+
+concatenate xs ys = case xs of
+  Nil -> ys ;
+  Cons x xs -> Cons x (concatenate xs ys) ;;
+
+reverse' xs ys = case xs of
+  Nil -> ys ;
+  Cons x xs -> reverse' xs (Cons x ys) ;;
+
+mreverse xs = reverse' xs Nil ;
+
+palindrome = choose w = word in concatenate w (mreverse w) ;
+\end{minted}
+
+Las únicas piezas no deterministas en este programa son las definiciones de \verb`letter`,
+\verb`word` y \verb`palindrome`. Una letra puede tener cuatro posibles valores y una palabra
+puede ser la cadena vacía (\verb`Nil`) o una letra seguida de una palabra. Así, una letra
+tiene el tipo \verb`Char` y una palabra el tipo \verb`[Char]`. Un palíndromo es una palabra
+concatenada con su inversa. Por simplicidad en el ejemplo, no he considerado los palíndromos
+de longitud impar. Las funciones auxiliares son deterministas y no difieren en nada de como
+se programarían en un lenguaje funcional tradicional. En este ejemplo se puede ver la
+combinación de las dos semánticas, `runtime choice' en \verb`word` y `call-time
+choice' en \verb`palindrome`. Completemos el ejemplo:
+
+\begin{minted}[bgcolor=bg]{haskell}
+mlength xs = case xs of
+  Nil -> 0 ;
+  Cons x xs -> 1 + mlength xs ;;
+
+e1 = choose p = palindrome in case mlength p == 4 of
+  True -> p ;;
+\end{minted}
+
+La función \verb`mlength` es clásica. Si evaluamos \verb`e1` se calcularán todos los
+palíndromos de longitud cuatro pero desgraciadamente el cómputo nunca terminará. Esto es
+debido a una limitación de Haskell y se debe a la misma razón por la cual la expresión
+\verb`filter (\a -> length a == 4) (iterate (1:) [])` no termina.
+
+\subsubsection{Orden superior}
+
+Sharade también tiene características de orden superior, indispensables en un lenguaje
+funcional. El orden superior se puede combinar con el no determinismo, con el operador
+`\verb`?`' y con la primitiva \verb`choose`.
+
+\begin{minted}[bgcolor=bg]{haskell}
+f a b = a + b ;
+g a b = a * b ;
+
+h z a b = z a b ;
+\end{minted}
+
+En el ejemplo se crea una función \verb`f` idéntica a la función suma, una función \verb`g`
+idéntica a la multiplicación y una función \verb`h`, con tres argumentos. El primero es una
+función que se aplica al segundo y al tercero. De esta forma, se puede pasar como argumento
+una función no determinista e incluso aprovechar las expresiones lambda. También es posible
+combinar esta característica con la primitiva \verb`choose`:
+
+\begin{minted}[bgcolor=bg]{haskell}
+e1 = h (f ? g) 1 2 ;
+e2 = choose f' = f ? g in f' (f' 1 2) (f' 1 2) ;
+\end{minted}
+
+La definición de \verb`e1` es muy simple y tendrá como resultado dos valores, \verb`3` y
+\verb`2`. Con \verb`e2` se puede ver de nuevo en acción la primitiva \verb`choose` ligando
+\verb`f'`. De esta manera, los dos únicos valores posibles son \verb`(1 + 2) + (1 + 2) = 6` y
+\verb`(1 * 2) * (1 * 2) = 4`.
+
+\subsubsection{Ajuste de patrones}
+
+Haskell permite usar ajuste de patrones en la definición de las funciones, pero no es más que
+azúcar sintáctico para expresiones \verb`case` muy tediosas. Por simplicidad, Sharade no
+cuenta con este azúcar sintáctico.
+
+\begin{minted}[bgcolor=bg]{haskell}
+f a = case a of
+  0 -> 1 ;
+  1 -> 2 ;
+  v -> v + v ;;
+
+fact n = case n of
+  1 -> 1 ;
+  n -> n * fact (n - 1) ;;
+\end{minted}
+
+El primer ejemplo es el interesante, el segundo es una implementación simple del cálculo del
+factorial, no emerge ninguna característica del no determinismo y menos de la compartición.
+Se deja ver que Sharade también soporta recursión, un añadido a la inferencia de tipos de
+Hindley-Milner. En el primer ejemplo, igual que en la primitiva \verb`choose`, el último
+patrón crea un nuevo ámbito con la variable \verb`v` disponible. En este caso también aplican
+las leyes del `call-time choice', pero no con buenas propiedades, como la demanda tardía y la
+ley `ignore', como veremos más adelante en la implementación. Para entenderlo rápidamente,
+se pierde la evaluación perezosa cuando es obligatorio evaluar \verb`a`.
+
+\subsubsection{Autómata finito no determinista}
+
+Un primer ejemplo de la potencia que permite la programación no determinista podría ser la
+implementación de un autómata finito no determinista de una forma muy sencilla.
+
+\begin{minted}[bgcolor=bg]{haskell}
+-- f :: State -> Char -> State
+f s a = case s of
+  0 -> case a of
+    'a' -> 0 ;
+    'b' -> 0 ? 1 ;;
+  1 -> case a of
+    'a' -> 2 ;;;
+
+-- accept' :: (State -> Char -> State) -> State -> [Char] -> Bool
+accept' f s as = case as of
+  Nil       -> s == 2 ;
+  Cons a as -> accept' f (f s a) as ;;
+
+-- accept :: (State -> Char -> State) -> [Char] -> Bool
+accept f as = accept' f 0 as ;
+\end{minted}
+
+Aquí se ven en juego todas las características previamente mencionadas. El ajuste de
+patrones, orden superior y no determinismo. No se ve ningún ejemplo de semántica `call-time
+choice', ya que en este ejemplo no tiene cabida, se quiere usar las características que
+proporciona la semántica `runtime choice'.
+
+Este AFN reconoce las cadenas de caracteres terminadas en `ba'. La función \verb`f` es la
+función de transición. La función de transición en un AFN es no determinista y en este
+ejemplo esto se puede apreciar en el primer estado cuando se lee una `b'. En un lenguaje
+tradicional se tendría que trabajar con un conjunto de valores, pero en este paradigma eso se
+da por supuesto, permitiendo una potencia descriptiva del algoritmo bastante atractiva. La
+función \verb`accept'` aplica recursivamente la función de transición, aceptando únicamente
+si se ha consumido toda la entrada y el autómata se encuentra en el estado 2.
+
+\subsubsection{Ordenación por permutación}
+
+Este ejemplo es el que usa Fischer para mostrar la biblioteca en la que me he basado para
+construir Sharade. Este tipo de ordenación es simplemente para un ejemplo y no tiene
+ningún uso práctico, ya que este algoritmo de ordenación es extremadamente ineficiente.
+Consiste en calcular todas las permutaciones de una lista y comprobar si alguna de ellas está
+ordenada. Con la evaluación perezosa quizás no es necesario calcular toda la permutación
+completa, ya que solo con mirar los dos primeros elementos de la lista puedes descartar todo
+el subarbol de permutaciones que se podrían generar. Fischer lo utiliza para mostrar que
+funciona la evaluación perezosa y por tanto se pueden descartar permutaciones sin necesidad
+de calcularlas enteras. Lo he querido poner como ejemplo para mostrar de nuevo la semántica
+`call-time choice' de Sharade y posteriormente para analizar la pérdida de rendimiento de
+Sharade. Como el ejemplo puede resultar complejo la primera vez, he decidido separarlo por
+trozos para explicarlo mejor.
+
+\begin{minted}[bgcolor=bg]{haskell}
+insert e ls = (Cons e ls) ? case ls of
+  Cons x xs -> Cons x (insert e xs) ;;
+\end{minted}
+
+Esta función `insertar' recibe un elemento y una lista. Inserta el elemento en algún lugar de
+la lista. Por lo tanto, se puede poner en la cabeza de la lista o insertarlo en algún lugar
+de la cola, llamando recursivamente.
+
+\begin{minted}[bgcolor=bg]{haskell}
+perm ls = case ls of
+  Nil -> Nil ;
+  Cons x xs -> insert x (perm xs) ;;
+\end{minted}
+
+Esta función calcula todas las permutaciones de una lista dada, apoyándose en la función
+\verb`insert`y llamándose recursivamente. Se calcula por tanto insertando la cabeza en todas
+las posiciones posibles de la permutación de la cola.
+
+\begin{minted}[bgcolor=bg]{haskell}
+isSorted ls = case ls of
+  Nil -> True ;
+  Cons x xs -> case xs of
+    Nil -> True ;
+    Cons y ys -> x <= y && isSorted (Cons y ys) ;;;
+
+sort ls = choose sls = perm ls in case isSorted sls of
+  True -> sls ;;
+\end{minted}
+
+La función \verb`isSorted` es compleja de seguir debido a todo el ajuste de patrones que hay
+que hacer pero no difiere en nada de como se haría en un lenguaje funcional tradicional.
+Simplemente calcula si una lista dada está ordenada. La segunda función, \verb`sort`, calcula
+una permutación y comprueba si está ordenada, en tal caso la devuelve. Para ello hay que usar
+la primitiva \verb`choose`, ya que \verb`sls` aparece dos veces en la expresión y debe
+compartir el valor porque tiene que pasar el filtro de si está ordenada.
+
+En resumen, el ejemplo calcula todas las permutaciones y devuelve la que está ordenada.
+También se aprovecha de las características como la evaluación perezosa que Fischer consigue
+traer al no determinismo en Haskell.
+
+\subsubsection{Evaluación perezosa}
+
+Para terminar, me gustaría mostrar que Sharade evalúa perezosamente y por tanto puede tratar
+con estructuras de datos infinitas, resultados que podrían dar error o cómputos infinitos.
+
+\begin{minted}[bgcolor=bg]{haskell}
+f x y = y ;
+e0 = f (1/0 ? 2/0) 0 ;
+\end{minted}
+
+Si se evalúa \verb`e0` da como resultado \verb`0`, el segundo argumento, no da ningún error
+por dividir por cero, tal como lo haría Haskell. Esto es debido a que la función no es
+estricta en el primer argumento. Esta propiedad es muy importante, Fischer la llama `Ignore'.
+Explicaré en el aparatado `Biblioteca explicit-sharing' cómo se consigue esto en la
+implementación. Veamos el siguiente ejemplo:
+
+\begin{minted}[bgcolor=bg]{haskell}
+mrepeat x = Cons x (mrepeat x) ;
+mtake n xs = case n of
+  0 -> Nil ;
+  n -> case xs of
+    Nil -> Nil ;
+    Cons y ys -> Cons y (mtake (n - 1) ys) ;;;
+
+coin = 0 ? 1 ;
+e1 = mtake 3 (mrepeat coin) ;
+e2 = choose c = coin in mtake 3 (mrepeat c) ;
+e3 = let c = coin in mtake 3 (mrepeat c) ;
+\end{minted}
+
+Las funciones \verb`mrepeat` y \verb`mtake` son deterministas. La primera crea una lista
+infinita con el primer argumento en cada posición y la segunda recoge los primeros \verb`n`
+elementos de una lista. La primera y la tercera expresión, \verb`e1` y \verb`e3`, son
+idénticas. El cómputo termina y da como resultado un conjunto de ocho resultados, ya que las
+dos expresiones son equivalentes a \verb`[coin, coin, coin]` y como cada coin es
+independiente se generan los ocho resultados.
+
+La segunda expresión, \verb`e2`, también termina pero da como resultado dos valores. Esto es
+normal porque, como ya veremos, la expresión es equivalente a
+\verb`choose c = coin in [c, c, c]`, por lo que el valor de todas las \verb`c` se comparte.
+
+En resumen, Sharade consigue mantener las buenas propiedades que Fischer consigue con su
+implementación en Haskell, en este ejemplo concreto, con la evaluación perezosa. Otra
+propiedad que mantiene, esta vez gracias a Haskell, es la compartición de los argumentos de
+una función, de manera que si uno de ellos tarda mucho en computarse, se puede reutilizar ese
+valor en todas las apariciones de dicho argumento.
+
+\subsection{Recolección de resultados}
+
+La implementación de Fischer provee dos formas de recolectar los resultados en Haskell. Sobre
+cómo usar el código generado hablaremos más adelante. Estas dos formas son con la función
+\verb`results` y otra con \verb`unsafeResults`. Para entender a qué se refiere Fischer con
+`unsafe' hay que entender las siguientes leyes:
+
+\begin{itemize}
+	\item[-] Idempotencia: \verb`a ? a = a`
+	\item[-] Conmutativa: \verb`(a ? b) ? (c ? d) = (a ? c) ? (b ? d)`
+\end{itemize}
+
+Cualquier implementación que recolecte los resultados que no cumpla esas leyes es considerada
+`insegura'. Con estas leyes, una recolección de resultados por anchura o por profundidad
+sería considerada insegura, ya que no cumpliría la segunda ley. Además, también se tendría
+que omitir resultados, ya que no se pueden repetir.
+
+La primera implementación de Fischer se basa en un conjunto ordenado de Haskell 
+(\verb`Set a`). Los resultados no se almacenan de acuerdo con la recolección de ellos. Otro
+detalle es que se tienen que recolectar todos los resultados, por lo que se carece de
+evaluación perezosa y en caso de que haya infinitos resultados, la ejecución nunca terminará.
+De hecho, ni si quiera se podrá obtener el primero de ellos.
+
+La segunda implementación, la insegura, usa las listas estándar de Haskell. Al contrario que
+la anterior, posee evaluación perezosa, puede tratar con resultados infinitos y es
+equivalente a una búsqueda en profundidad por la izquierda.
+
+\subsection{Sintaxis abstracta}\label{sec:sintaxis_abstracta}
+
+Los ejemplos anteriores han permitido introducir buena parte de los elementos sintácticos
+de Sharade, así como su sentido dentro de los objetivos de este trabajo. En este apartado
+mostramos una visión más completa y unificada de las diferentes construcciones sintácticas
+del lenguaje para posterior referencia, dejando los detalles más concretos de la sintaxis al
+apartado \ref{sec:sintaxis_concreta}, al describir las distintas componentes de la
+implementación.
+
+Un programa de Sharade consiste en una serie de definiciones de funciones de la forma
+\verb`f x1 ... xn = e ;`, con $n >= 0$, siendo \verb`f, x1 ... xn` identificadores que sirven
+tanto para variables como funciones (permitiendo orden superior) y \verb`e` es una expresión.
+Cada nombre de función \verb`f` dispone de una única ecuación definicional, por lo tanto el
+ajuste de patrones y el indeterminismo se concentran en la expresión \verb`e`. Una expresión
+\verb`e` adopta una de las siguientes estructuras:
+
+\begin{itemize}
+  \item[-]{\makebox[1.2cm]{$l$\hfill}} $\Rightarrow$ Un literal, que puede ser True, False y
+  un número entero o real.
+  
+  \item[-]{\makebox[1.2cm]{$x$\hfill}} $\Rightarrow$ Una variable, siempre empiezan con
+  minúscula.
+  
+  \item[-]{\makebox[1.2cm]{$C$\hfill}} $\Rightarrow$ Una constructora de datos, siempre
+  empiezan con mayúscula.
+  
+  \item[-]{\makebox[1.2cm]{$e1 \: e2$\hfill}} $\Rightarrow$ Una aplicación de funciones.
+  \item[-]{\makebox[1.2cm]{$\backslash x \rightarrow e$\hfill}} $\Rightarrow$ Una función
+  lambda.
+  
+  \item[-]{\makebox[1.2cm]{$e1 \:? \: e2$\hfill}}  $\Rightarrow$ Una elección de dos valores,
+  origen del indeterminismo.
+  
+  \item[-]{\makebox[1.2cm]{$(e1, \: e2)$\hfill}} $\Rightarrow$ Parejas polimórficas.
+  \item[-]{\makebox[3.4cm]{$choose \: x = e1 \: in \: e2$\hfill}} $\Rightarrow$ Compartición
+  de la variable.
+  
+  \item[-]{\makebox[3.4cm]{$let \: x = e1 \: in \: e2$\hfill}} $\Rightarrow$ Creación de una
+  ligadura.
+  
+  \item[-]{\makebox[3.4cm]{$e1 \: (infixOp) \: e2$\hfill}} $\Rightarrow$ Una expresión con un
+  operador infijo. Los únicos operadores infijos que existen son $(+)$, $(-)$, $(*)$, $(/)$,
+  $(\&\&)$ y $(||)$.
+
+  \item[-]$case \: e \: of \: t1 \rightarrow e1 ; \ldots tn \rightarrow en ;$ $\Rightarrow$
+  Donde \verb`t` es un patrón, que tiene la estructura \verb`C x1 ... xn` o \verb`(x1, x2)`,
+  siendo C una constructora de datos y el segundo patrón es el de las parejas. Las únicas
+  constructoras de datos que existen son los números, True, False, Cons, Nil y Pair.
+\end{itemize}
+
+Para las aplicaciones asumimos las convenciones habituales de la notación currificada, en la
+que `$e1 \: e2 \ldots en$' es azúcar sintáctico para `$(\ldots(e1 \: e2)\ldots) \: en$'. Las
+únicas funciones que existen en el lenguaje son $dAdd$, $dSub$, $dMul$, $dDiv$, ..., $dNeq$
+para el tipo Double. Los operadores infijos son únicamente para los números enteros y
+booleanos. Esto es así debido a que el lenguaje no tiene clases de tipos. Para la función
+\verb`?` asumimos el tipo \verb`(?) :: a -> a -> a`.
+
+Pedimos a los programas que estén bien tipados con relación al sistema de tipos
+Hindley-Milner. Como tipos primitivos consideramos \verb`Bool`, \verb`Char`, \verb`Integer`,
+\verb`Double`, las parejas polimórficas (\verb`(a, b))` y las listas (\verb`[a]`). Los tipos
+no se pueden especificar en la definición de las funciones.
+
+\subsection{Instalación y uso}
+
+Instalar la biblioteca Sharade y el compilador es relativamente sencillo. Para empezar, se
+necesita una versión especifica de una biblioteca que no existe en el repositorio de paquetes
+de Haskell, Hackage. Esta biblioteca es \verb`explicit-sharing`. Su autor original, como ya
+he dicho en múltiples ocasiones, es Fischer, pero he tenido que hacer unos retoques para
+hacerla compatible con las nuevas versiones de Haskell. Para instalar esta biblioteca, se
+puede usar la siguiente ristra de comandos:
+
+\begin{minted}[bgcolor=bg]{bash}
+# Clonar el repositorio
+git clone git@github.com:ManuelVs/explicit-sharing.git
+# Actualizar la lista de paquetes de cabal
+cabal update
+# Generar la biblioteca
+cabal sdist
+# Instalar la biblioteca
+cabal install dist/explicit-sharing*.tar.gz
+# Limpiar los resultados intermedios (opcional)
+cabal clean
+\end{minted}
+
+Ahora hay que hacer algo parecido para instalar mi biblioteca y compilador:
+
+\begin{minted}[bgcolor=bg]{bash}
+# Clonar el repositorio
+git clone git@github.com:ManuelVs/Sharade.git
+# Actualizar la lista de paquetes de cabal
+cabal update
+# Generar la biblioteca
+cabal sdist
+# Instalar la biblioteca
+cabal install dist/Sharade*.tar.gz
+# Limpiar los resultados intermedios (opcional)
+cabal clean
+\end{minted}
+
+En la instalación \verb`cabal` debe haber puesto el compilador de Sharade en alguna
+localización accesible para la línea de comandos, añadiéndolo al \verb`PATH` o similar. En
+caso de que no lo haya hecho, se puede hacer a mano. En un sistema Linux debería poder
+encontrarse en \verb`/home/username/.cabal/bin`. En un sistema Windows puede encontrarse en
+\verb`C:\Users\username\.cabal\bin`.
+
+Para compilar un fichero tan solo hay que pasar como argumento la localización de dicho
+fichero.
+
+\begin{minted}[bgcolor=bg]{bash}
+$ cat example.sa
+mRepeat a = a ? mRepeat (a + 1) ;
+$ Sharade example.sa
+Done.
+\end{minted}
+
+\subsection{Uso en Haskell}
+
+Para usar la traducción hay que conocer un repertorio de funciones básicas:
+
+\begin{itemize}
+  \item[-] \verb`results`: Recolecta los resultados en un conjunto ordenado de Haskell. Tiene
+  el tipo \verb`results :: Sharing s => s a -> Set a`. Esta función asegura las leyes de
+  Fischer, explicadas anteriormente.
+  
+  \item[-] \verb`unsafeResults`: Recolecta los resultados en una lista estándar de Haskell.
+  Tiene el tipo \verb`unsafeResults :: Sharing s => s a -> [a]`.
+  
+  \item[-] Operador infijo \verb`<#>`: Necesario para hacer cualquier aplicación funcional
+  con funciones traducidas de Sharade. Su existencia es explicada en un punto posterior de
+  este documento. Por ejemplo, \verb`mRepeat <#> (return 1)`.
+  
+  \item[-] \verb`convert`: Convierte tipos primitivos de Haskell a Sharade y viceversa,
+  incluyendo listas y parejas. El tipo es complejo e incorpora nuevas clases de tipos cuya
+  explicación distraería el objetivo de este apartado. Para transformar los tipos de Haskell
+  a los tipos de Sharade hay que usarla de la manera convencional, por ejemplo,
+  \verb`convert [1,2,3::Integer]`. Es necesario especificar los tipos, ya que Haskell en
+  ocasiones no es capaz de inferirlos (por estas clases de tipos). Para transformar los tipos
+  en el otro sentido hay que usar el operador \verb`>>=`. Por ejemplo, \\
+  \verb`sort <#> (convert [1..20::Integer]) >>= convert`.
+\end{itemize}
+
+De esta manera, para usar la función compilada en el ejemplo de \verb`mRepeat` se puede usar
+la siguiente expresión Haskell:
+
+\begin{minted}[bgcolor=bg]{haskell}
+e0 = unsafeResults $ mRepeat <#> (return 1) :: [Integer]
+\end{minted}
+
+Para evaluar la función \verb`sort` del ejemplo de ordenación por permutación se puede usar:
+
+\begin{minted}[bgcolor=bg]{haskell}
+e1 = unsafeResults $ sort <#>
+      (convert [1..20::Integer]) >>= convert :: [[Integer]]
+\end{minted}
+
+\end{document}

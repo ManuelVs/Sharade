@@ -1,0 +1,44 @@
+\documentclass[class=article, crop=false]{standalone}
+\usepackage[utf8]{inputenc}
+\usepackage[spanish]{babel}
+\usepackage{minted}
+\usepackage{xcolor}
+
+\definecolor{bg}{rgb}{0.95,0.95,0.95}
+
+\begin{document}
+
+\section{Conclusiones}
+Hemos presentado e implementado un pequeño lenguaje funcional con características
+indeterministas y con combinación de las semánticas `call-time choice' y `runtime choice',
+que era el núcleo del proyecto. La implementación de todas las fases se ha hecho en Haskell,
+un lenguaje puramente funcional de referencia en este paradigma en el mundo académico. La
+traducción hace un uso intensivo de programación monádica para representar el indeterminismo
+y la compartición de expresiones, usando la primitiva \verb`share` de la biblioteca de
+Fischer. También creemos que la traducción es sencilla, ya que cada expresión en Sharade se
+corresponde con una expresión en Haskell, siguiendo un modelo recursivo muy básico y fácil de
+entender.
+
+Una vez más queda demostrado el enorme potencial y abstracción de Haskell para describir de
+una manera clara y concisa cómputos muy complicados y a priori nada triviales. Gracias a su
+sistema de tipos fuerte asegura gran seguridad acerca del resultado. Incluso se puede razonar
+acerca del comportamiento del programa tan solo mirando los tipos de las funciones que están
+involucradas. Esto supone una gran ventaja, pero es necesario desarrollar una cierta soltura
+para poder realizar ese tipo de deducciones. Al principio el programador se puede encontrar
+con errores crípticos y por lo tanto tener la sensación de que Haskell es un lenguaje
+complicado y que no ayuda al programador, pero todo lo contrario. Incluso los errores están
+aportando una gran información si se saben interpretar.
+
+También es necesario citar que cualquier páramo inexplorado de Haskell para un programador
+puede resultar algo completamente nuevo, extraño y sin ningún concepto sólido sobre el que
+basarse para entender el nuevo aspecto. Esto me hace considerar que, siendo uno de mis
+lenguajes favoritos, es el más complicado con diferencia, incluso más que las nuevas
+revisiones de C++. ¡Haskell es un lenguaje tan bien definido que hasta los tipos tienen
+tipos!
+
+Por último, creemos que la combinación de semánticas en Sharade ha quedado con una sintaxis
+clara y consistente, pudiendo expresar algoritmos indeterministas con una riqueza semántica
+bastante importante, por lo que creemos que esta combinación o modelos similares puedan ser
+la base de futuros trabajos.
+
+\end{document}

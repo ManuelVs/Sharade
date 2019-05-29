@@ -1,0 +1,208 @@
+\documentclass[class=article, crop=false]{standalone}
+\usepackage[utf8]{inputenc}
+\usepackage[spanish]{babel}
+\usepackage{minted}
+\usepackage{xcolor}
+
+\definecolor{bg}{rgb}{0.95,0.95,0.95}
+
+\begin{document}
+
+\section{Introduction}
+
+This document is part of the result of a academic year of work to complete the final degree
+project in Computer Engineering at the Complutense University of Madrid. In this document I
+tackle the proposal and implementation of a small and simple functional language with common
+features in functional languages such as higher order and pattern matching, to which is added
+another one not usual in this paradigm, but in an extension of it, the so-called functional
+logical programming\cite{antoy2010functional}, which combines features of independent
+paradigms of logical and functional programming. From the first it adopts in particular the
+possibility of indeterministic computations that are sustained in the most well-known
+languages of the paradigm such as Curry\cite{Hanus16Curry} and Toy\cite{fraguas1999toy}, in
+the notion of an indeterministic function, that is to say, a function that for given
+arguments can return more than one value.
+
+In classical works such as \textit{Nondeterminism in algebraic specifications and algebraic
+programs}\cite{hussmann1993nondeterminism} there is a relationship between two fundamental
+types of semantics for indeterminism in functional programs or equations in general:
+semantics of no sharing (commonly known as `runtime choice') or semantics of sharing
+(call-time choice). In the section \ref{sec:prog_func_ind} we explain the difference between
+the two types.
+
+The standard current of functional logical programming, whose theoretical foundations are
+found in \textit{An Approach to Declarative Programming Based on a Rewriting Logic}\cite{
+DBLP:journals/jlp/Gonzalez-MorenoHLR99} has considered that the most suitable semantics for
+practical programming is call-time choice, which is why it is adopted in languages such as
+Curry or Toy.
+
+The traditional implementations of these languages have been based on compilation to Prolog,
+that is, the original programs are translated to object Prolog programs, so that the Prolog
+execution of these programs already expresses correctly the semantics of the original
+programs. This trend changed in KiCS2\cite{BrasselHanusPeemoellerReck11}, a Curry
+implementation based on Haskell, in which the mode that captures the semantics of call-time
+choice is quite dark and dependent on low-level aspects. Later, S. Fischer made another
+purely functional proposal for call-time choice semantics with lazy
+evaluation\cite{fischer2011purely} that is much clearer and more abstract. This proposal was
+embodied in a Haskell library which, with the necessary adaptations, has been an important
+basis for this work.
+
+The task of combining these two semantics is developed independently in other works
+\cite{riesco2014singular}. However, these proposals were only implemented as 'patches' in the
+Toy system whose implementation is based on Prolog.
+
+The essential part of this work is to create a purely functional programming language where
+you can see the potential of the combination of the two types of semantics and what it can
+mean for the description of indeterministic algorithms. There are practical examples where
+neither of the two semantics adapts well to solve a problem but a combination of both. I will
+try to translate the utility of this combination in the examples used throughout the
+document.
+
+\subsection{Programming with no-deterministic functions}
+
+Non-deterministic programming has repeatedly shown to simplify the way in which an algorithm
+can be written, such as in languages such as Prolog, Curry and Toy. People like Antony and
+Hanus think this is because the results can be seen individually rather than as elements
+belonging to a set of possible results\cite{antoy2010functional}. A recurrent example to
+explain non-deterministic programming is usually the indeterministic result of a coin
+flipped, heads or cross, 0 or 1, and then proceed to explain the ways in which an expression
+with this deterministic value can be understood, how a sum of these values would work, or how
+a call to a function would work. If that piece appears multiple times, must all of them have
+the same value or can they have different values? Traditionally in non-deterministic
+programming there are two types of semantics that tell us how to interpret these
+non-deterministic pieces. These two semantics are the 'Call-time choice' and the 'Runtime
+choice'.
+
+\subsubsection{Call-time choice}
+
+Conceptually, 'call-time choice' semantics consists of choosing the non deterministic value
+of each of the arguments of a function before applying them\cite{fischer2011purely}. One of
+these languages is Curry. Let's see an example of this behavior:
+
+\begin{minted}[bgcolor=bg]{haskell}
+choose x _ = x
+choose _ y = y
+
+coin = choose 0 1
+
+double x = x + x
+\end{minted}
+
+Let's first comment on the definition of \verb`choose`. If we write that definition in
+Haskell it will always choose the first equation, but in Curry you can express
+non-determinism by writing several overlapping definitions. In this way, \verb`choose 0 1`
+can be reduced to \verb`0` or a \verb`1`, this is exactly non-determinism! Now that
+I've explained the concept of non-determinism, let's see what the 'call-time choice' is. In
+the statement \verb`double x = x + x`, \verb`x` appears as an argument. This means that all
+appearances of \verb`x` will correspond to the same value. If we evaluate \verb`double coin`
+we will get only two results, \verb`0` and \verb`2`. If we simply evaluate the expression 
+\verb`coin + coin` in the interpreter we will get four results, \verb`0, 1, 1, 2`. That is to
+say, in the semantics of `call-time choice' it is as if the values of the arguments are
+chosen in the call of the function and `share' it in all the expression.
+
+\subsubsection{Runtime choice}
+The semantics `runtime choice' is much simpler. The values of non deterministic parts are not
+shared. Each appearance of a non-deterministic piece will generate all the results that
+correspond to it. In a language with these characteristics the evaluation of
+\verb`double coin` of the previous example will produce the four results.
+
+That is to say, in this semantics it must be understood that each non deterministic piece
+will act as an independent source of indeterministic values, unlike in `call-time choice'
+where the appearances of the arguments of a function are linked to the same result throughout
+the entire expression.
+
+\subsubsection{Other semantics}
+There are other semantics in the field of indeterministic programming, such as the one
+specified in the work \textit{Singular and plural functions for functional logic programming}
+\cite{riesco2014singular}, which is proposed by the lack of concision of the semantics
+`runtime choice' when pattern matching comes into play.
+
+Another semantics is indeed the combination of the two types of semantics mentioned above,
+which is the core of this work. In our work the combination is achieved with primitives
+present in Sharade, which specify when to share the value of a variable in all its
+apparitions throughout an expression. Later we will give examples of the use of this
+semantics.
+
+\subsection{Objetives}
+My purpose in this end-of-degree work is to create a functional language that combines the
+two previous semantics. To do this, the language will have primitives to specify when
+nondeterministic pieces of an expression must share the same value and when they are must
+behave in the same way as in runtime choice. This language will have characteristics of a
+modern functional language, such as higher order, lazy evaluation, lambda expressions, etc.
+All this combined with non-determinism, for example, a part in an expression can correspond
+to an indeterministic function. Everything will be implemented in Haskell taking advantage of 
+features it already has as standard in addition to a series of libraries. The language is
+simple for a matter of delimitation and to show the the core of this work, the combination of
+the two semantics. Efficiency is not pursued, but in the section \ref{sec:rendimiento} the
+performance is discussed and some ideas are given for improve it.
+
+To combine the two types of semantics, Sharade has a primitive structure
+\verb`choose ... in ...`. It's like a \verb`let ... in ...`, but it has a behavior in which
+the bound identifier that is created on the left side will share the value in all occurrences
+of that identifier on the right side. It that is, it has the same behavior as 'call-time
+choice'. If nothing is specified, my language semantically behaves the same as `runtime
+choice'. For example:
+
+\begin{minted}[bgcolor=bg]{haskell}
+coin = 0 ? 1 ;
+
+f x = x + x ;
+f' x = choose x' = x in x' + x' ;
+\end{minted}
+
+If we evaluate \verb`f coin` we get the four values from the previous example, but if we
+evaluate \verb`f' coin` we get two values, because a ligature of \verb`x'` has been created.
+This way, all occurrences of \verb`x'` will share the same value when evaluating the
+expression. To clarify, the operator infixed \verb`?` is a primitive of Sharade, it means the
+same as the function \verb`choose` of the previous example.
+
+In conclusion, Sharade combines the two types of semantics, letting the user specify which
+pieces will behave as they would in `call-time choice'. This combination of the two semantics
+has not been seen in existing literature. It is true that there is a similar approach in
+\textit{A Flexible Framework for Programming with Non-deterministic Functions}
+\cite{lopez2009flexible}, but it is not as clear or explicit as the one I
+propose in Sharade.
+
+\subsection{Workplan}
+First we will try to express the indeterminism in Haskell. For this we will need a certain
+fluency in monadic programming.  The indeterminism in Haskell by default is dealt with the
+semantics of `runtime choice'. Every time you want to `extract' a value from an
+indeterministic (monadic) expression, all the results will appear. This type of programming
+is in itself quite tedious, although elegant abstractions such as notation \verb`do` can be
+used.
+
+Then we'll understand Fischer's explicit-sharing library, which brings the `call-time choice'
+features to Haskell without losing the lazy evaluation. He achieves this thanks to the state
+monads, with which he implements the early choice and late evaluation. In other words, the
+choices of the value to use are made at the moment but the evaluation of that value is only
+done when it is required. If the programming was already tedious before, now much more, since
+a higher level of monads is added, making necessary more extractions of values of the monads,
+more lines of code.
+
+From here comes the need to create a small language where all the syntax is discharged, but
+wide enough to express what concerns us, the combination of semantics and their usefulness.
+With a behavior of `runtime choice' by default and at the request of the programmer,
+`call-time choice' on a specified variable.
+
+With all this in mind, it is necessary to create a Sharade program compiler to Haskell
+programs, with a translation function being part of the heart of the work. This translation
+function is discussed in the section \ref{sec:traduccion}.
+
+\subsection{Document structure}
+This document is intended for people with minimal Haskell knowledge even if they don't know
+what non-deterministic programming is. To this end, at this introductory point I have
+explained what this paradigm is about with existing languages such as Curry. Later I will
+explain how Sharade approaches this paradigm with the combination of the two types of
+semantics that concern us. The rest of the paper deals with the implementation of Sharade,
+which due to the complexity underlying the implementation of this paradigm in Haskell, it is
+necessary to explain quite a few monadic programming concepts in section \ref{sec:con_prev}.
+Then I will comment on the implementation of Fischer that solves the problem of sharing with
+lazy evaluation in the section \ref{sec:explicit_sharing}. In point \ref{sec:parsec} I will
+make a brief explanation about the library \verb`Parsec` that I use to perform the Sharade
+syntax analysis. Once the reader is comfortable with the concepts of monadic programming,
+indeterminism and the two semantics, I will approach the implementation of Sharade, from
+parsing, type analysis and translation. Finally there will be a section of conclusions, where
+I will collect some comments on performance, how to improve the implementation of the
+project, how new features can be incorporated into the language, such as user types, other
+ways to collect results and possible future work.
+
+\end{document}

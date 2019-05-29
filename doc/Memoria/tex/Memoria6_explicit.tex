@@ -1,0 +1,504 @@
+\documentclass[class=article, crop=false]{standalone}
+\usepackage[utf8]{inputenc}
+\usepackage[spanish]{babel}
+\usepackage{minted}
+\usepackage{xcolor}
+\usepackage{stmaryrd}
+
+\definecolor{bg}{rgb}{0.95,0.95,0.95}
+
+\begin{document}
+
+\section{Call-time choice y evaluación perezosa}
+Uno de los problemas que tiene la programación indeterminista en Haskell es que no cuenta con
+construcciones que permitan la compartición de valores indeterministas en una expresión.
+Recordemos que la semántica por defecto es la ya comentada `runtime choice'. Se podría
+simular el comportamiento de la semántica `calltime choice' si se extrayesen los valores de
+las mónadas para luego operar con ellos, pero esto plantea un inconveniente bastante
+importante, se pierde la evaluación perezosa, ya que al extraer el valor de la mónada estamos
+forzando su evaluación. Fischer en su trabajo propone una solución a este problema, que
+comentaremos en el siguiente apartado. En el apartado \ref{sec:uso_directo} veremos algunos
+ejemplos del uso de su biblioteca, donde finalmente quedará clara la necesidad de crear un
+lenguaje para mostrar la combinación de semánticas.
+
+\subsection{Biblioteca explicit-sharing}\label{sec:explicit_sharing}
+Aunque el paradigma del no determinismo ya está completo en Haskell con las herramientas que
+he explicado más arriba, en concreto con cualquier tipo que pertenezca a la clase
+\verb`MonadPlus`, perdemos ciertas características, como la evaluación perezosa. Sin esta
+característica, no podríamos trabajar con estructuras de datos infinitas o desechar cómputos
+que que no nos interesen. Vamos a ver una serie de ejemplos para ilustrar esta pérdida de
+características\cite{fischer2011purely}:
+
+\begin{minted}[bgcolor=bg]{haskell}
+import Control.Monad
+
+-- Definición auxiliar
+duplicate :: Monad m => m a -> m (a, a)
+duplicate a = do
+  u <- a
+  v <- a
+  return (u,v)
+-- Definición auxiliar
+const' :: a -> a -> a
+const' = const
+
+strict_bind :: (MonadPlus m) => m Int -> m (Int, Int)
+strict_bind x = do
+  v <- x
+  duplicate (const' (return 2) (return v))
+
+lazy_share x = do
+  v <- share x
+  duplicate (const' (return 2) v)
+\end{minted}
+
+Si pasamos un valor infinito o que se tarde mucho en calcular o directamente, provoque un
+error de cómputo a \verb`strict_bind`, no se comportará correctamente, incluso cuando no se
+está usando para nada el argumento. Esto es debido a la implementación del operador
+\verb`>>=`, para cualquier tipo de mónada en la que se evalúe la función. En otras palabras,
+perdemos la evaluación perezosa. Sin embargo, como veremos más adelante, esto no es así en
+la otra función, \verb`lazy_share`. Con esa conseguimos la evaluación perezosa y sin perder
+la importante característica de que todas las apariciones de \verb`v` correspondan con el
+mismo valor.
+\newpage
+
+\subsubsection{Leyes de share}
+La implementación del \verb`share` tiene que cumplir una serie de leyes para garantizar unas
+características mínimas:
+\begin{itemize}
+  \item[-] Fail $\rightarrow$ \verb`share mzero = return mzero`. \\
+  Compartir un cómputo vacío debe tener el mismo efecto. Es decir, se debe poder compartir un
+  cómputo sin resultados sin que eso afecte al comportamiento del programa.
+  \item[-] Ignore $\rightarrow$ \verb`share a >>= \x -> b = b`. \\
+  Si la variable \verb`x` no aparece en la expresión de la lambda, el share se debe comportar
+  como si no existiera. Esto garantiza el comportamiento explicado en el ejemplo anterior.
+  Por ejemplo, si \verb`a` fuera un cómputo vacío o no terminante, el cómputo global no
+  debería ser vacío o no terminante si no se usa ninguno de sus resultados.
+  \item[-] Choice $\rightarrow$ \verb`share (a ? b) = (share a) ? (share b)`. \\
+  Compartir un cómputo no determinista debe ser lo mismo que una elección de las
+  comparticiones. Es decir, si una pieza del cómputo genera múltiples resultados, el
+  resultado debe ser el mismo que si se coge cada uno de esos resultados, se evalúan en la
+  expresión que contiene esa pieza y se juntasen todos los resultados nuevamente generados
+  \cite{lopez2007simple}\cite{baader1999term}. Es una característica básica de la semántica
+  `Call-time choice', por lo que es bastante deseable que esta primitiva, \verb`share`, la
+  cumpla.
+\end{itemize}
+
+La tercera ley es fundamental para el correcto funcionamiento de la semántica `calltime
+choice'. La diferencia entre las dos semánticas se aprecia bastante bien en términos
+abstractos a través de una propiedad esencial que verifica `call-time choice' y no `runtime
+choice'. Para formularla, introducimos una notación que explicamos vía ejemplos.
+\begin{itemize}
+  \item[-]  $\llbracket e\rrbracket$ $\rightarrow$ Es el conjunto de valores en el que se
+            puede reducir la expresión \verb`e`. Por ejemplo,
+            $\llbracket coin\rrbracket = \{ 0, 1\}$.
+  \item[-]  $C[e]$ $\rightarrow$ Indica que la expresión \verb`e` aparece dentro de un
+            contexto sintáctico $C[]$.
+\end{itemize}
+
+La propiedad fundamental de `call-time choice' es entonces: \\
+$\llbracket C[e \: ? \: e']\rrbracket
+=\llbracket C[e]\rrbracket \:\bigcup\: \llbracket C[e']\rrbracket
+=\llbracket C[e] \:?\: C[e']\rrbracket$. \\
+Con palabras, si una pieza en un contexto es
+indeterminista, senánticamente debería ser equivalente a extraer esa pieza del contexto y
+hacer la unión de los resultados incorporando cada uno de los valores de la pieza. Explicado
+con un ejemplo puede quedar más claro: \\
+$\llbracket duplicate \: (0 \: ? \: 1)\rrbracket = \{0, 2\}$ \\
+$\llbracket duplicate \:0\rrbracket\:\bigcup\:\llbracket duplicate \: 1\rrbracket
+=\{0\} \:\bigcup\: \{2\}$ \\
+$\llbracket duplicate \:0 \:?\: duplicate \:1\rrbracket = \{0\} \:\bigcup\: \{2\}$ \\
+Esta propiedad la describe F. J. López Fraguas en \textit{A Simple Rewrite Notion for
+Call-time Choice Semantics}\cite{lopez2007simple}.
+
+Las leyes Fail, Choice e Ignore hacen que se cumplan ciertos comportamientos en las
+implementaciones que aseguran la evaluación perezosa y la compartición de nodos en una
+expresión:
+
+\begin{itemize}
+  \item[-] Elección temprana $\rightarrow$ La elección de un valor se tiene que hacer como si
+  se ejecutara de manera impaciente. Pero no se puede ejecutar impacientemente, por el
+  ejemplo anterior, perderíamos la evaluación perezosa.
+  \item[-] Demanda tardía $\rightarrow$ Se puede hacer una elección sin necesidad de efectuar
+  el cómputo. Es decir, se elegirá el cómputo que hay que hacer pero no se efectuará hasta
+  que sea realmente necesario, consiguiendo de nuevo la evaluación perezosa.
+\end{itemize}
+\newpage
+
+\subsubsection{Simples pero malas implementaciones}
+Para entender mejor estas leyes e intuiciones, vamos a ver dos formas incorrectas de
+implementar \verb`share` y ver por qué no serían aptas.
+
+\begin{minted}[bgcolor=bg]{haskell}  
+import Control.Monad
+
+duplicate :: Monad m => m a -> m (a, a)
+duplicate a = do
+  u <- a
+  v <- a
+  return (u,v)
+
+coin :: MonadPlus m => m Int
+coin = mplus (return 0) (return 1)
+
+dup_coin_let :: MonadPlus m => m (Int, Int)
+dup_coin_let = let x = coin in duplicate x
+
+dup_coin_bind :: MonadPlus m => m (Int, Int)
+dup_coin_bind = do
+  x <- coin
+  duplicate (return x)
+
+dup_coin_share :: MonadPlus m => m (Int, Int)
+dup_coin_share = do
+  x <- share coin
+  duplicate x
+
+share :: MonadPlus m => m a -> m (m a)
+share a = return a
+\end{minted}
+
+Esta implementación cumple las leyes `Fail' e `Ignore', pero no cumple la ley `Choice'. El
+resultado de \verb`dup_coin_share` debería ser \{(0,0), (1,1)\}, pero tiene las cuatro
+combinaciones. Esto es debido a que esta implementación comparte sólo el cómputo no
+determinista, no los valores que genera. Así, en este caso \verb`dup_coin_share` es
+equivalente a \verb`dup_coin_let`, le pasa el mismo cómputo no determinista.
+
+La siguiente implementación de share sí cumple la ley de `Choice', pero no cumple `Ignore' y
+`Fail', ya que hace una elección temprana del valor no determinista. Así, en el primer
+ejemplo si se pasa como argumento un cómputo infinito a \verb`lazy_share` se convertiría en
+otro cómputo infinito, a pesar de descartar el primer el argumento. Igualmente, si se pasa un
+cómputo sin resultados, ¡la función no tendrá resultados! Este comportamiento sí que es
+alarmante.
+
+\begin{minted}[bgcolor=bg]{haskell} 
+share :: Monad m => m a -> m (m a)
+share a = a >>= \x -> return (return x)
+\end{minted}
+
+\subsubsection{Implementación sencilla}
+Esta es una implementación sencilla que solo es capaz de compartir cómputos no deterministas
+de enteros respetando las leyes. Este ejemplo sirve como toma de contacto para entender una
+implementación más cercana a la real, que explicaré en el siguiente punto.
+
+Para combinar la demanda tardía con la elección temprana del cómputo Fischer utiliza la
+memoización. La idea es atrasar todo lo posible la elección del cómputo y recordar la misma
+elección cuando se pide el valor real. Para ello, crea un tipo de datos que usa para recordar
+si un valor ha sido evaluado o no:
+
+\begin{minted}[bgcolor=bg]{haskell} 
+data Thunk a = Uneval (Memo a) | Eval a
+\end{minted}
+
+También se crea un nuevo tipo, \verb`Memo`, que es el que se encargará de tener toda la lista
+de los cómputos no deterministas, \verb`Thunk`s.
+
+\begin{minted}[bgcolor=bg]{haskell} 
+newtype Memo a = Memo {
+  unMemo :: [Thunk Int] -> [(a, [Thunk Int])] }
+\end{minted}
+
+\verb`Memo` forma una mónada sobre \verb`a` y además se puede meter en la clase de tipos
+\verb`MonadState` con \verb`[Thunk Int]` como estado. Es decir, nuestros programas no
+deterministas tendrán un `estado oculto', que unido a la memoización, se encargará de
+recordar las decisiones sobre la compartición. Veamos como se implementa todo esto:
+
+\begin{minted}[bgcolor=bg]{haskell}
+instance Functor Memo where
+  fmap f m = Memo (\ts ->
+    map (\(a, ts') -> (f a, ts')) (unMemo m ts))
+
+instance Applicative Memo where
+  pure = return
+  f <*> m = Memo (\ts ->
+  concatMap (\(a, ts') ->
+    map (\(f, ts'') -> (f a, ts'')) (unMemo f ts'))
+    (unMemo m ts))
+\end{minted}
+
+Las instancias de Functor y Applicative no son importantes, pero es necesario implementarlas
+debido a que tenemos que meter \verb`Memo` en la clase de tipos \verb`Monad`.
+
+Recordemos que \verb`fmap` recibía una función y el valor monádico. Tenemos que transformar
+el valor metido en la `caja' aplicando la función. Pero esta vez, ese valor está en el
+resultado de la función que tiene \verb`Memo`. Por lo tanto, aplicamos esa función,
+\verb`unMemo m ts` y simplemente hacemos un map sobre la lista de parejas aplicando la
+función al primer valor.
+
+Applicative es la más complicada. Recibimos una función encerrada en un valor monádico y un
+valor monádico. Tenemos que obtener el valor encerrado dentro del segundo valor, lo obtenemos
+como antes. Después, usamos la lista de \verb`Thunk` que hemos obtenido para obtener la
+función, que aplicamos a cada valor. Mientras tanto hemos obtenido otra lista de
+\verb`Thunk`, que formará parte del resultado final.
+
+\begin{minted}[bgcolor=bg]{haskell}
+instance Monad Memo where
+  return x = Memo (\ts -> [(x,ts)])
+  m >>= f = Memo (\ts -> concatMap (\(x,ts) ->
+    unMemo (f x) ts) (unMemo m ts))
+
+instance Alternative Memo where
+  empty = mzero
+  (<|>) = mplus
+
+instance MonadPlus Memo where
+  mzero = Memo (\ts -> [])
+  a `mplus` b = Memo (\ts -> unMemo a ts ++ unMemo b ts)
+
+instance MonadState [Thunk Int] Memo where
+  get = Memo (\ts -> [(ts,ts)])
+  put ts = Memo (\_ -> [((),ts)])
+\end{minted}
+
+Para el operador \verb`>>=`, tenemos que sacar el valor encerrado aplicando la función a la
+lista que recibimos. Después, como \verb`f` devuelve otro \verb`Memo`, usamos la lista
+generada para obtener la lista final.
+
+La implementación de \verb`Alternative` es idéntica a la de \verb`MonadPlus`, que simplemente
+concatena las listas generadas.
+
+\verb`MonadState` se parece mucho a los otros ejemplos. Con \verb`get` simplemente tenemos
+que poner el valor como estado y con \verb`put` tenemos que poner el argumento que nos dan
+como estado, además de limpiar el valor, poniendo \verb`()`.
+
+\begin{minted}[bgcolor=bg]{haskell}
+share :: Memo Int -> Memo (Memo Int)
+share a = memo a
+
+memo :: Memo Int -> Memo (Memo Int)
+memo a = do
+-- Obtenemos la lista
+  thunks <- get
+  let index = length thunks
+  -- Metemos el nuevo valor al final
+  put (thunks ++ [Uneval a])
+  return $ do
+    -- Obtenemos de nuevo la lista
+    thunks <- get
+    -- Probablemente haya cambiado, por eso es importante
+    -- recordar (memoizar) la decisión tomada, `index`
+    case thunks !! index of
+      Eval x -> return x -- Devolver el valor
+      Uneval a -> do
+        -- Aquí se generaran realmente todos los valores
+        -- posibles
+        x <- a
+        thunks <- get
+        -- Sustituir el antiguo valor como valor "evaluado"
+        let (xs,_:ys) = splitAt index thunks
+        put (xs ++ [Eval x] ++ ys)
+        -- Devolver el valor
+        return x
+\end{minted}
+
+Creo que los comentarios entre las líneas del código ya son explicativos, pero aún así lo
+explicaré con otras palabras. El estado `oculto' es una lista de valores que pueden estar sin
+evaluar o evaluados, \verb`[Thunk Int]`. Con \verb`get` somos capaces de obtener esta lista.
+Incorporamos el nuevo valor y guardamos su posición, \verb`index`. Devolvemos una `función'
+(de 0 argumentos), que, cuando sea evaluada la primera vez (elección temprana), nos
+encontraremos con que el valor en esa posición no está evaluado. Entonces se efectúa el
+cómputo (evaluación tardía) y actualizamos la lista, depositándola de nuevo en el estado
+`oculto'. Justo en la línea \verb`x <- a` surgirán todos los valores posibles. Esa línea
+actúa como `fuente' de todos los resultados. Para entender el ejemplo de la fuente, un
+ejemplo:
+\begin{minted}[bgcolor=bg]{haskell}
+f :: [Int]
+f = do
+  v <- [1,2,3,4]
+  return (v + 1)
+\end{minted}
+
+La línea \verb`a <- [1,2,3,4]` actúa como fuente, \verb`v` irá tomando los valores y se
+devolverán incrementados en uno. Los cómputos solo se efectúan cuando es necesario,
+proporcionando una evaluación perezosa bastante sofisticada.
+
+Como ya he dicho al principio de este punto, esta implementación respeta las tres leyes
+básicas de las que habla Fischer, pero solo es capaz de compartir enteros. En el siguiente
+punto explicaré una implementación muy parecida a la que usa Fischer en su biblioteca.
+
+\subsubsection{Implementación real}
+En la implementación real, Fischer declara el tipo \verb`Lazy`, que tendrá la misma función
+que \verb`Memo` del ejemplo anterior. También usa un nuevo tipo, \verb`Store` que usará como
+estado `oculto', que tendrá la misma función que la lista de \verb`Thunk Int`. Para
+implementar \verb`Lazy` como instancia de \verb`MonadState` y las demás clases, delega en
+otra clase de tipos algunas operaciones, \verb`Nondet`. Es decir, está implementado de tal
+manera que cualquier tipo \verb`a`que pertenezca a esta clase, \verb`Lazy a` pertenecerá a
+las clases de tipos \verb`MonadPlus`, \verb`MonadState`... En concreto, el tipo \verb`Set a`
+está metido en esa clase, por lo que podremos observar casi cualquier cómputo en esta
+estructura de datos. Vamos a ver las definiciones, esta vez no pondré la implementación
+porque es bastante parecida a los ejemplos:
+
+\begin{minted}[bgcolor=bg]{haskell}
+class Nondet n where
+  failure :: n
+  (?)     :: n -> n -> n
+
+newtype Lazy n a = Lazy {
+    fromLazy :: (a -> Store -> n) -> Store -> n
+  }
+
+data Store = Store { nextLabel :: Int, heap :: M.IntMap Untyped }
+\end{minted}
+
+En esta implementación, \verb`Store` es como la lista de \verb`Thunk`, guarda los resultados
+en un mapa y proporciona la claves para recordar la decisión. Fischer implementa funciones
+auxiliares para actualizar y observar esta estructura, como inserciones, eliminaciones,
+consultas... \verb`Lazy` es la mónada sobre la que se realizarán todas las operaciones.
+Veamos la implementación del share:
+
+\begin{minted}[bgcolor=bg]{haskell}
+class Shareable m a where
+  shareArgs :: Monad n =>
+    (forall b . Shareable m b => m b -> n (m b)) -> a -> n a
+
+class MonadPlus s => Sharing s where
+  share :: Shareable s a => s a -> s (s a)
+
+instance Nondet n => Sharing (Lazy n) where
+  share a = memo (a >>= shareArgs share)
+
+memo :: MonadState Store m => m a -> m (m a)
+memo a = do
+  key <- freshLabel
+  return $ do
+    thunk <- lookupValue key
+    case thunk of
+      Just x  -> return x
+      Nothing -> do
+        x <- a
+        storeValue key x
+        return x
+\end{minted}
+
+Lo primero es la existencia de una clase de tipos que se pueden compartir. Fischer mete en
+esta clase casi todos los tipos primitivos de Haskell. Está pensada para compartir
+recursivamente estructuras de datos más complejas, donde hay que compartir cada elemento y
+además las sucesivas colas de la lista. Después está la clase de tipos \verb`Sharing`, donde
+gracias a la implementación de Fischer, están todos los tipos \verb`Lazy a` si \verb`a`
+pertenece a la clase de tipos \verb`Nondet`. La implementación del \verb`share` se basa en
+compartir recursivamente el cómputo y después memoizarlo. La memoización es bastante parecida
+a la de antes. Se obtiene una clave (antes era la longitud de la lista) y se devuelve una
+función (de cero argumentos) que cuando sea evaluada, `recordará' la clave y el cómputo a
+compartir. Si es la primera vez que se evalúa, se encontrará al consultar el estado `oculto'
+que no está, generando los resultados e insertándolos. Si ya ha sido generado, tan solo hay
+que devolverlo.
+
+\subsection{Codificación directa}\label{sec:uso_directo}
+Veamos unos ejemplos de cómo usar la biblioteca de Fischer para mostrar cómo se pueden
+mezclar los dos tipos de semántica en Haskell sin perder evaluación perezosa:
+
+\begin{minted}[bgcolor=bg]{haskell}
+import Control.Monad
+import Control.Monad.Sharing
+import Data.Monadic.List
+
+coin :: Sharing s => s Int
+coin = (return 0) `mplus` (return 1)
+
+duplicate :: Sharing s => s Int -> s Int
+duplicate x = do
+    u <- x
+    v <- x
+    return (u + v)
+
+f :: Sharing s => s Int -> s Int -> s Int
+f x y = do
+  x' <- share x
+  duplicate y
+
+e1, e2, e3 :: Sharing s => s Int
+e1 = duplicate coin
+e2 = do
+    c <- share coin
+    duplicate c
+e3 = f undefined coin  
+\end{minted}
+
+La primera definición se corresponde con \verb`coin = 0 ? 1` de Sharade. Como \verb`mplus`
+opera con dos valores monádicos, es necesario meter el 0 y el 1 en sus respectivas mónadas
+para luego juntarlas. La definición de \verb`duplicate` se corresponde con la definición en
+Sharade de \verb`duplicate x = x + x`. Para conseguir las propiedades de `runtime choice' en
+Haskell, es necesario `extraer' dos veces un valor del argumento. La función \verb`f` la
+pongo de ejemplo para mostrar la evaluación perezosa y demostrar que la ley `Fail' e `Ignore'
+funcionan en el tercer ejemplo.
+
+El primer ejemplo llama a la función \verb`duplicate` directamente con \verb`coin`. Por lo
+tanto, como el valor no está compartido, se generarán las cuatro posibilidades (dos
+repetidas). El siguiente ejemplo muestra cómo conseguir la semántica `calltime choice'. Como
+el valor de \verb`c` está ahora compartido, \verb`duplicate` solo generará dos resultados.
+Por último, el tercer ejemplo muestra la evaluación perezosa. Como la función \verb`f` ignora
+el primer argumento, el cómputo no da lugar a error, aunque se intente hacer una compartición
+con él.
+
+\begin{minted}[bgcolor=bg]{haskell}
+import Control.Monad
+import Control.Monad.Sharing
+import Data.Monadic.List
+
+mconcatenate :: Sharing s => s (List s a) -> s (List s a)
+                             -> s (List s a)
+mconcatenate mxs mys = do
+    xs <- mxs
+    case xs of
+        Nil -> mys
+        Cons x mxs -> cons x (mconcatenate mxs mys)
+
+mreverse :: Sharing s => s (List s a) -> s (List s a)
+mreverse mxs = mreverse' nil mxs where
+    mreverse' rvs mxs = do
+        xs <- mxs
+        case xs of
+            Nil -> rvs
+            Cons mx mxs -> mreverse' (cons mx rvs) mxs
+
+letter :: Sharing s => s Char
+letter = (return 'a') `mplus` (return 'b') `mplus` (return 'c')
+
+word :: Sharing s => s (List s Char)
+word = nil `mplus` (cons letter word)
+
+palindrome :: Sharing s => s (List s Char)
+palindrome = do
+    w <- share word
+    let l = cons letter nil
+    w `mconcatenate` (l `mplus` nil) `mconcatenate` (mreverse w)
+\end{minted}
+
+En este ejemplo las cosas se empiezan a complicar. Como todos los argumentos son monádicos,
+no se puede trabajar con los valores de una manera directa y clara como se haría
+tradicionalmente. Siempre hay que sacar los valores del interior de la mónada para
+manipularlos, ensuciando mucho la sintaxis. Esta es una de las razones por las que propongo
+Sharade, para poder trabajar con el indeterminismo de una manera fácil y limpia, con el
+añadido de la combinación de las dos semánticas.
+
+Las funciones \verb`mconcatenate` y \verb`mreverse` no tienen ningún tipo de indeterminismo,
+pero tienen que tratar con la programación monádica. Podrían recibir un argumento
+indeterminista, pero no están pensadas para esa situación. Lo primero que hay que hacer es
+extraer el valor de la mónada y evaluarlo, distinguiendo entre el caso base y el caso
+recurivo. Hay que mencionar que \verb`nil` y \verb`cons` son constructoras auxiliares del
+tipo lista. Tienen la función añadida de meter el resultado en un valor monádico. La
+definición de \verb`letter` es parecida a la de \verb`coin`, hay que meter cada valor en una
+mónada y juntarlas. La definición de \verb`word` genera infinitos resultados indeterministas
+de listas finitas e infinitas. Una palabra puede ser la lista vacía o una letra seguida de
+otra palabra. En la definición de \verb`palindrome` se puede apreciar la compartición. Como
+\verb`w` aparece dos veces en la expresión, es necesario que compartan el valor, si fueran
+independientes \verb`palindrome` generaría todas las palabras posibles, es decir, no tendría
+ninguna diferencia con \verb`word`. Para permitir los palíndromos impares la pieza intermedia
+puede contener una letra o ser la lista vacía. El palíndromo se definiría en Sharade como
+\begin{minted}[bgcolor=bg]{haskell}
+palindrome = choose w = word in
+             let l    = Cons letter Nil in
+             mconcatenate w (mconcatenate (l ? Nil) w) ;
+\end{minted}
+habiendo definido antes las funciones auxiliares, claro.
+
+Estos ejemplos muestran cómo es posible expresar directamente en Haskell la programación con
+indeterminismo combinando `call-time choice' y `runtime choice'. También deja claro que esta
+tarea en Haskell es complicada, propenso a errores y difícil de entender para nuevos
+ingresados en la materia.
+
+Sin embargo, como ya he dicho antes, Sharade es capaz de reducir esta complejidad,
+descargando bastante la sintaxis y ofreciendo una abstracción de la programación monádica,
+indeterminismo y combinando los dos tipos de semánticas muy potentes.
+
+\end{document}
