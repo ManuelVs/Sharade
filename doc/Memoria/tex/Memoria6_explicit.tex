@@ -13,7 +13,7 @@
 Uno de los problemas que tiene la programación indeterminista en Haskell es que no cuenta con
 construcciones que permitan la compartición de valores indeterministas en una expresión.
 Recordemos que la semántica por defecto es la ya comentada `runtime choice'. Se podría
-simular el comportamiento de la semántica `calltime choice' si se extrayesen los valores de
+simular el comportamiento de la semántica `calltime choice' si se extrajesen los valores de
 las mónadas para luego operar con ellos, pero esto plantea un inconveniente bastante
 importante, se pierde la evaluación perezosa, ya que al extraer el valor de la mónada estamos
 forzando su evaluación. Fischer en su trabajo propone una solución a este problema, que
@@ -101,7 +101,7 @@ $\llbracket C[e \: ? \: e']\rrbracket
 =\llbracket C[e]\rrbracket \:\bigcup\: \llbracket C[e']\rrbracket
 =\llbracket C[e] \:?\: C[e']\rrbracket$. \\
 Con palabras, si una pieza en un contexto es
-indeterminista, senánticamente debería ser equivalente a extraer esa pieza del contexto y
+indeterminista, semánticamente debería ser equivalente a extraer esa pieza del contexto y
 hacer la unión de los resultados incorporando cada uno de los valores de la pieza. Explicado
 con un ejemplo puede quedar más claro: \\
 $\llbracket duplicate \: (0 \: ? \: 1)\rrbracket = \{0, 2\}$ \\
@@ -424,7 +424,7 @@ funcionan en el tercer ejemplo.
 
 El primer ejemplo llama a la función \verb`duplicate` directamente con \verb`coin`. Por lo
 tanto, como el valor no está compartido, se generarán las cuatro posibilidades (dos
-repetidas). El siguiente ejemplo muestra cómo conseguir la semántica `calltime choice'. Como
+repetidas). El siguiente ejemplo muestra cómo conseguir la semántica `call-time choice'. Como
 el valor de \verb`c` está ahora compartido, \verb`duplicate` solo generará dos resultados.
 Por último, el tercer ejemplo muestra la evaluación perezosa. Como la función \verb`f` ignora
 el primer argumento, el cómputo no da lugar a error, aunque se intente hacer una compartición
@@ -475,7 +475,7 @@ Las funciones \verb`mconcatenate` y \verb`mreverse` no tienen ningún tipo de in
 pero tienen que tratar con la programación monádica. Podrían recibir un argumento
 indeterminista, pero no están pensadas para esa situación. Lo primero que hay que hacer es
 extraer el valor de la mónada y evaluarlo, distinguiendo entre el caso base y el caso
-recurivo. Hay que mencionar que \verb`nil` y \verb`cons` son constructoras auxiliares del
+recursivo. Hay que mencionar que \verb`nil` y \verb`cons` son constructoras auxiliares del
 tipo lista. Tienen la función añadida de meter el resultado en un valor monádico. La
 definición de \verb`letter` es parecida a la de \verb`coin`, hay que meter cada valor en una
 mónada y juntarlas. La definición de \verb`word` genera infinitos resultados indeterministas

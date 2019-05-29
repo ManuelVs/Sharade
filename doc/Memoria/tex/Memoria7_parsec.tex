@@ -17,9 +17,9 @@ nombres reservados, el formato de los comentarios, especificar la prioridad de l
 operadores, tener en cuenta la indentación...
 
 Parsec implementa todas estas operaciones haciendo uso de la mónada con estado
-`\verb`ParsecT s u m a`'. Además, es una \verb`MonadTrans`. Es un tipo que permite un flujo de
-caracteres \verb`s`, un tipo de estado de usuario, \verb`u`, una mónada \verb`m` y un valor
-de retorno \verb`a`. Este valor de retorno serán las sucesivas partes del lenguaje, un
+`\verb`ParsecT s u m a`'. Además, es una \verb`MonadTrans`. Es un tipo que permite un flujo
+de caracteres \verb`s`, un tipo de estado de usuario, \verb`u`, una mónada \verb`m` y un
+valor de retorno \verb`a`. Este valor de retorno serán las sucesivas partes del lenguaje, un
 número, una expresión, un patrón... \verb`ParsecT` es una mónada con estado, donde el estado
 es la porción de la entrada que queda por consumir. Las primitivas de la biblioteca son las
 que se encargan de actualizar este estado `oculto'.
@@ -82,9 +82,9 @@ El lenguaje también ofrece primitivas para operadores binarios e infijos de dis
 asociatividad. No he aprovechado estas primitivas en mi implementación debido a la poca
 flexibilidad que ofrecían para generar expresiones.
 
-Gracias a la gran flexivilidad del tipo \verb`ParsecT` se pueden crear gran cantidad de
+Gracias a la gran flexibilidad del tipo \verb`ParsecT` se pueden crear gran cantidad de
 extensiones para la biblioteca. Dos extensiones que he utilizado son \verb`parsec3-numbers` y
-\verb`indents`. La extensión \verb`parsec3-numbers` permite parsear números enteros y reales
+\verb`indents`. La extensión \verb`parsec3-numbers` permite analizar números enteros y reales
 en gran cantidad de formatos, con más potencia que el analizador por defecto de
 \verb`Parsec`. La extensión \verb`indents` es capaz de tener en cuenta la indentación, muy
 útil para analizar ciertas expresiones, como `case of', un grupo de definiciones de funciones

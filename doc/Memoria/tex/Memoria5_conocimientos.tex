@@ -29,7 +29,7 @@ a la clase de tipos \verb`Num`, tienen en común que implementan las funciones s
 multiplicación, resta, valor absoluto...
 
 Dicho de otra manera, las clases de tipos son una especie de interfaz que implementa algún
-tipo concreto, añadiendole alguna funcionalidad. No hay que confundir las clases de tipo con
+tipo concreto, añadiéndole alguna funcionalidad. No hay que confundir las clases de tipo con
 las clases de Java o C++, no tiene nada que ver. Una comparación mas idónea sería decir que
 son como las interfaces de Java, pero en mi opinión las clases de tipos son más potentes.
 
@@ -231,7 +231,7 @@ ejemplo :: Maybe (Stack Int)
 ejemplo = emptyStack >>= push 1 >>= push 2 >>= pop >>= pop
 \end{minted}
 
-Ha aparecido una nueva función, \verb`fail`. Esta función recibe un string y devuelve un
+Ha aparecido una nueva función, \verb`fail`. Esta función recibe un String y devuelve un
 valor monádico. Con la mónada \verb`Maybe`, esta función simplemente devuelve \verb`Nothing`,
 pero otras mónadas más complejas podrían llevar la traza del error. Por ejemplo, en la
 biblioteca \verb`parsec` se sigue esta filosofía. Los errores y el estado en en análisis se

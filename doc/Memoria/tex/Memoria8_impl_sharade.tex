@@ -182,7 +182,7 @@ el sistema de tipos dará un error de ambigüedad.
 Esto se puede solucionar permitiendo que las expresiones traducidas sean polimórficas, es
 decir, permitiendo que se puedan evaluar en la mónada que se desee. Para conseguir esto es
 necesario especificar directamente los tipos, por lo que es necesario un análisis de tipos de
-mi lenguaje y traducirlos correctamente a Haskell. Veamoslo en el ejemplo:
+mi lenguaje y traducirlos correctamente a Haskell. Veámoslo en el ejemplo:
 
 \begin{minted}[bgcolor=bg]{haskell}
 import Control.Monad
@@ -354,7 +354,7 @@ paréntesis que serían necesarios en Haskell para facilitar la lectura.
   \item[-]$case \: e \: of \: t1 \rightarrow e1 ; \ldots tn \rightarrow en ;$ $\Rightarrow$
   Una expresión \verb`case` es complicada de traducir, ya que hay un caso especial en el que
   Haskell no puede deducir los `tipos intermedios' de las expresiones, por culpa de
-  ambigüedades en las claes de tipos, dando un error en tiempo de compilación. Para traducir
+  ambigüedades en las clases de tipos, dando un error en tiempo de compilación. Para traducir
   esta expresión, uso una función auxiliar llamada \verb`translateMatch`, que traduce cada
   uno de los casos del \verb`case`. Así, la expresión se traduce como \\
   \verb`translate e >>= (\pec -> case pec of {`\\
@@ -403,7 +403,7 @@ mónada que las envuelve. Esto es así ya que, según las leyes del `call-time c
 \: = \: \llbracket C[f \: x]\rrbracket \: \bigcup \: \llbracket C[g \: x]\rrbracket$. Es
 decir, claramente nos da igual elegir entre las dos funciones y juntar los resultados que
 aplicar las dos funciones por separado y juntar los resultados. En la semántica
-`runtime choice' también se cumple si consideramos que todas las apariones de un
+`runtime choice' también se cumple si consideramos que todas las apariciones de un
 identificador son  independientes (que es básicamente el comportamiento de esta semántica).
 
 La segunda optimización a realizar para mejorar el rendimiento es tener en cuenta en tiempo

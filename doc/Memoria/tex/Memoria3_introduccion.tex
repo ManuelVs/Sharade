@@ -24,7 +24,7 @@ devolver más de un valor.
 
 En trabajos clásicos como \textit{Nondeterminism in algebraic specifications and algebraic
 programs}\cite{hussmann1993nondeterminism} se dispone entre dos tipos fundamentales de
-semántica para el indeterminismo en programas funcionales o ecuacionales en general:
+semántica para el indeterminismo en programas funcionales o ecuaciones en general:
 semántica de no compartición (conocida habitualmente como `runtime choice') o semánticas de
 compartición (call-time choice). En el apartado \ref{sec:prog_func_ind} explicamos la
 diferencia entre ambas.
@@ -40,7 +40,7 @@ Prolog\cite{deransart2012prolog}, es decir, los programas originales se traducen
 Prolog objeto, de modo que la ejecución Prolog de estos ya expresa correctamente la semántica
 de los programas originales. Esta tendencia cambió en
 KiCS2\cite{BrasselHanusPeemoellerReck11}, una implementación de Curry basada en Haskell, en
-la que el modo que se captura la semántica de call-time choice resulta bastente oscuro y
+la que el modo que se captura la semántica de call-time choice resulta bastante oscuro y
 dependiente de aspectos de bajo nivel. Más adelante, S. Fischer realizó otra propuesta
 puramente funcional para la semántica de call-time choice con evaluación
 perezosa\cite{fischer2011purely} que resulta mucho más clara y abstracta. Esta propuesta
@@ -106,7 +106,7 @@ resultados que le corresponden. En un lenguaje con estas características la eva
 \verb`double coin` del ejemplo anterior sí producirá los cuatro resultados.
 
 Es decir, en esta semántica hay que entender que cada pieza no determinista, así como las
-copias de esta qu epuedan aparecer por aplicación de las ecuaciones que definen las
+copias de esta que puedan aparecer por aplicación de las ecuaciones que definen las
 funciones, actuará como una fuente independiente de valores indeterministas, al contrario que
 en `call-time choice' donde las apariciones de los argumentos de una función están ligadas a
 un mismo resultado a lo largo de toda la expresión.
@@ -134,7 +134,7 @@ una pieza en una expresión se puede corresponder con una función indeterminist
 implementado en Haskell aprovechando características que ya tiene de serie además de una
 serie de bibliotecas. El lenguaje es simple por una cuestión de acotación y para mostrar el
 núcleo de este trabajo, la combinación de las dos semánticas. No se persigue la eficiencia,
-pero en el apartado \ref{sec:rendimiento} se comenta el rendimieto y algunas ideas para
+pero en el apartado \ref{sec:rendimiento} se comenta el rendimiento y algunas ideas para
 mejorarlo.
 
 Para combinar los dos tipos de semánticas, Sharade tiene una estructura primitiva
@@ -205,7 +205,7 @@ utilizo para realizar el análisis sintáctico de Sharade. Una vez el lector se 
 con los conceptos de programación monádica, indeterminismo y las dos semánticas, abordaré la
 implementación de Sharade, desde el análisis sintáctico, análisis de tipos y traducción. Por
 último habrá un apartado de conclusiones, donde recogeré algunos comentarios sobre el 
-endimiento, cómo mejorar la implementación del proyecto, cómo se pueden incorporar nuevas
+rendimiento, cómo mejorar la implementación del proyecto, cómo se pueden incorporar nuevas
 características al lenguaje, como tipos de usuario, otras formas de recolectar resultados y
 posibles trabajos futuros.
 

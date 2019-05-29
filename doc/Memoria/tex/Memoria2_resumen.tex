@@ -13,18 +13,18 @@ mediante funciones no deterministas, es decir, funciones que para unos argumento
 pueden devolver más de un resultado. Este tipo de funciones existen en los llamados lenguajes
 lógico funcionales, que adoptan para el indeterminismo una semántica de compartición
 (call-time choice), en contraste con la semántica de no compartición (runtime choice) más
-típica de otros formalismos, como son los sitemas de reescritura.
+típica de otros formalismos, como son los si temas de reescritura.
 
 Lo específico del lenguaje nuevo que se va a proponer e implementar, \textit{Sharade}, es que
 combinará ambos tipos de semánticas mediante primitivas que existirán en el propio lenguaje.
 
-La implementacion del lenguaje está realizada íntegramente en Haskell, en contraste con las
+La implementación del lenguaje está realizada íntegramente en Haskell, en contraste con las
 implementaciones clásicas de los lenguajes lógico funcionales, habitualmente basadas en
-Prolog. Haskel es un lenguaje funcional puro con un sistema de tipos muy fuerte, siendo el
+Prolog. Haskell es un lenguaje funcional puro con un sistema de tipos muy fuerte, siendo el
 lenguaje de referencia en el ámbito de la programación funcional con evaluación perezosa.
 Aparte de fases auxiliares como son el análisis sintáctico y la inferencia de tipos, lo
 esencial de la implementación consiste en un proceso de traducción de programas fuente
-Sharade en programas objeto Haskell, aptovechando así muchas de las características de este
+Sharade en programas objeto Haskell, aprovechando así muchas de las características de este
 último como lenguaje funcional. Los programas objeto hacen uso intensivo de programación
 monádica, a través en particular de una biblioteca Haskell para la programación con
 indeterminismo con call-time choice y evaluación perezosa, biblioteca ya existente pero que
