@@ -18,9 +18,9 @@ nunca se ha tratado con este tipo de programación con anterioridad.
 
 Muchas de las explicaciones de este punto están remotamente inspiradas en el libro\textit{
 Learn You a Haskell for Great Good} \cite{Lipovaca:2011:LYH:2018642}. El código de ejemplo y
-las explicaciones son de mi puño y letra, pero he tomado prestadas algunas comparaciones como
-`caja' para poder hacer la explicación mas entendible para las personas que no están
-acostumbradas al paradigma de la programación funcional.
+las explicaciones son de nuestro puño y letra, pero hemos tomado prestadas algunas
+comparaciones como `caja' para poder hacer la explicación mas entendible para las personas
+que no están acostumbradas al paradigma de la programación funcional.
 
 \subsection{Clases de tipos}
 Las clases de tipos en Haskell son agrupaciones de tipos que tienen la característica común
@@ -31,7 +31,8 @@ multiplicación, resta, valor absoluto...
 Dicho de otra manera, las clases de tipos son una especie de interfaz que implementa algún
 tipo concreto, añadiéndole alguna funcionalidad. No hay que confundir las clases de tipo con
 las clases de Java o C++, no tiene nada que ver. Una comparación mas idónea sería decir que
-son como las interfaces de Java, pero en mi opinión las clases de tipos son más potentes.
+son como las interfaces de Java, pero en nuestra opinión las clases de tipos son más
+potentes.
 
 \subsection{Familias de tipos, \textit{Kinds}}
 También es conveniente entender cómo funcionan los tipos en Haskell. Los tipos en Haskell
@@ -455,10 +456,10 @@ por reconocer y los valores van cambiando dependiendo de la estructura sintácti
 es una expresión, otras un número y otras el programa entero (y esperemos que ahí el estado
 sea la cadena vacía, si no hay un error sintáctico, pero de eso se encarga otra mónada).
 
-A modo de nota final, me gustaría aclarar que el tipo \verb`State` como tal no existe
+A modo de nota final, nos gustaría aclarar que el tipo \verb`State` como tal no existe
 en Haskell, realmente es un alias del tipo \verb`StateT s Identity a`. \verb`StateT` es una
-mónada transformadora. Como ya he explicado de manera superficial en otros puntos, permiten
-componer varias mónadas distintas, para conseguir un buen desacoplamiento de las tareas que
-hay que hacer en el programa.
+mónada transformadora. Como ya hemos explicado de manera superficial en otros puntos,
+permiten componer varias mónadas distintas, para conseguir un buen desacoplamiento de las
+tareas que hay que hacer en el programa.
 
 \end{document}

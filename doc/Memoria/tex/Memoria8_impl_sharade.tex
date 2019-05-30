@@ -16,7 +16,7 @@ https://github.com/ManuelVs/Sharade.
 
 La implementación cuenta con 14 módulos y alrededor de mil líneas de código Haskell. La mayor
 parte de las líneas de código corresponden a la traducción y el análisis de tipos. Este
-relativamente pequeño tamaño resulta, en mi opción, engañoso para apreciar una gran
+relativamente pequeño tamaño resulta, en nuestra opinión, engañoso para apreciar una gran
 dificultad. La programación en Haskell, y especialmente la programación monádica, puede ser
 extraordinariamente concisa y expresiva, requiriendo eso sí, una pericia técnica del
 programador no trivial de adquirir. Por otra parte, también hay que destacar que la
@@ -82,12 +82,12 @@ Francisco J. Fraguas muestra en `A simple rewrite notion for call-time choice se
 Como ya hemos visto, la biblioteca \verb`parsec` permite especificar una gramática
 L-atribuida aprovechando todas las características de Haskell. Un inconveniente que tiene es
 que en análisis es descendente, por lo que a la hora de la implementación hay que transformar
-la gramática para evitar la recursión a izquierdas. En mi implementación no he hecho un
-cálculo de los directores, por lo que el análisis se basa en un backtracking LL0.
+la gramática para evitar la recursión a izquierdas. En nuestra implementación no hemos hecho
+un cálculo de los directores, por lo que el análisis se basa en un backtracking LL0.
 
 La implementación es bastante sencilla, pero hace un uso interesante de las características
 de orden superior de Haskell. Tan solo quiero mostrar una pequeña parte de la
-implementación para enseñar cómo he llevado a cabo la transformación de la gramática de
+implementación para enseñar cómo hemos llevado a cabo la transformación de la gramática de
 atributos para poder analizar descendentemente usando dichas características de orden
 superior de Haskell.
 
@@ -113,7 +113,7 @@ expr'' 0 = do
 
 Esta parte del código corresponde al análisis de las expresiones con un operador infijo de
 prioridad cero, que es la máxima prioridad. En este caso es solo corresponde al operador
-\verb`(?)`, origen del indeterminismo de mi lenguaje.
+\verb`(?)`, origen del indeterminismo de Sharade.
 
 Como se puede ver, las definiciones auxiliares en vez de obtener un valor heredado con la
 expresión, como se haría en un analizador descendente tradicional, devuelven una función que
@@ -182,7 +182,7 @@ el sistema de tipos dará un error de ambigüedad.
 Esto se puede solucionar permitiendo que las expresiones traducidas sean polimórficas, es
 decir, permitiendo que se puedan evaluar en la mónada que se desee. Para conseguir esto es
 necesario especificar directamente los tipos, por lo que es necesario un análisis de tipos de
-mi lenguaje y traducirlos correctamente a Haskell. Veámoslo en el ejemplo:
+Sharade y traducirlos correctamente a Haskell. Veámoslo en el ejemplo:
 
 \begin{minted}[bgcolor=bg]{haskell}
 import Control.Monad
@@ -284,8 +284,8 @@ sustitución infinita. Esta parte de la implementación se puede encontrar en el
 \subsection{Traducción a Haskell}\label{sec:traduccion}
 
 La última etapa de la compilación es la generación de código Haskell. Para explicar la
-traducción me basaré en la sintaxis abstracta presentada en \ref{sec:sintaxis_abstracta}. En
-la traducción de cualquier expresión se cumple un invariante, las subexpresiones generadas
+traducción nos basaremos en la sintaxis abstracta presentada en \ref{sec:sintaxis_abstracta}.
+En la traducción de cualquier expresión se cumple un invariante, las subexpresiones generadas
 son expresiones Haskell monádicas, por lo tanto nuestra función de traducción siempre debe
 generar una expresión monádica. Esto es necesario para tener presente en todo momento el
 indeterminismo. De esta manera, las expresiones funcionales pasan a estar dentro de mónadas,
@@ -304,7 +304,7 @@ indeterminista (puede que sean varios) y devuelve el resultado. El resultado pue
 tipo primitivo o ser un tipo funcional (encerrado en una mónada). Así, este operador se puede
 aplicar varias veces.
 
-Veamos caso a caso como funciona la traducción de una expresión. Me he ahorrado los
+Veamos caso a caso como funciona la traducción de una expresión. Nos hemos ahorrado los
 paréntesis que serían necesarios en Haskell para facilitar la lectura.
 
 \begin{itemize}
@@ -338,7 +338,7 @@ paréntesis que serían necesarios en Haskell para facilitar la lectura.
 
   \item[-]{\makebox[3.4cm]{$choose \: x = e1 \: in \: e2$\hfill}} $\Rightarrow$ Compartición
   de una variable o expresión. Hay que usar la primitiva \verb`share` sobre la expresión y
-  añadir al ámbito la nueva variable. He decidido usar una expresión lambda para conseguir
+  añadir al ámbito la nueva variable. Hemos decidido usar una expresión lambda para conseguir
   este objetivo y el operador \verb`(>>=)`. Así, la traducción se hace de la siguiente
   manera: \verb`share (translate e1) >>= (\x -> translate e2)`
 
@@ -395,7 +395,7 @@ como comentaremos más adelante en el apartado de conclusiones.
 La primera tarea se puede realizar para evitar el uso excesivo de la programación monádica
 es tener en cuenta una consecuencia lógica de las leyes del `call-time choice' para eliminar
 por completo la compleja estructura de las funciones monádicas. Recordemos que actualmente
-una función de mi lenguaje traducida a Haskell tiene el tipo
+una función de Sharade traducida a Haskell tiene el tipo
 \verb`s (s a1 -> s (s a2 -> ... (s an)...))`. Este tipo es equivalente a
 \verb`s a1 -> ... -> s an`. Es decir, eliminamos recursivamente del tipo de la función la
 mónada que las envuelve. Esto es así ya que, según las leyes del `call-time choice', siendo

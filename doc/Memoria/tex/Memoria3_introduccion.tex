@@ -25,7 +25,7 @@ devolver más de un valor.
 En trabajos clásicos \cite{hussmann1993nondeterminism} se distingue entre dos tipos
 fundamentales de  semántica para el indeterminismo en programas funcionales o ecuacionales en
 general: semántica de no compartición (conocida habitualmente como `run-time choice') o
-semánticas de compartición (call-time choice). En el apartado \ref{sec:prog_func_ind}
+semántica de compartición (call-time choice). En el apartado \ref{sec:prog_func_ind}
 explicamos la diferencia entre ambas.
 
 La corriente estándar de la programación lógico funcional, cuyos fundamentos teóricos se
@@ -50,12 +50,12 @@ de combinar las dos semánticas citadas. Sin embargo, esas propuestas solo se im
 como `parches' muy poco abstractos en el sistema Toy cuya implementación está basada en
 Prolog.
 
-La parte esencial de este trabajo del trabajo que presentamos aquí es crear un lenguaje
-puramente funcional donde se vea el potencial de la combinación de los dos tipos de
-semánticas y lo que ello puede suponer para la descripción de algoritmos indeterministas.
-Hay ejemplos prácticos donde ninguna de las dos semánticas se adapta bien para resolver un
-problema pero sí una combinación de ambas. Intentaré plasmar la utilidad de esta combinación
-en ejemplos de uso a lo largo de este documento.
+La parte esencial del trabajo que presentamos aquí es crear un lenguaje puramente funcional
+donde se vea el potencial de la combinación de los dos tipos de semánticas y lo que ello
+puede suponer para la descripción de algoritmos indeterministas. Hay ejemplos prácticos donde
+ninguna de las dos semánticas se adapta bien para resolver un problema pero sí una
+combinación de ambas. Intentaré plasmar la utilidad de esta combinación en ejemplos de uso a
+lo largo de este documento.
 
 \subsection{Programación con funciones no deterministas}\label{sec:prog_func_ind}
 La programación no determinista ha demostrado en varias ocasiones simplificar la forma en la
@@ -89,7 +89,7 @@ Primero vamos a comentar la definición de \verb`choose`. Si escribimos esa defi
 Haskell siempre escogerá la primera ecuación, pero en Curry se puede expresar el no
 determinismo escribiendo varias definiciones que solapen. De este modo \verb`choose 0 1`
 podrá reducirse a un \verb`0` o a un \verb`1`, ¡esto es justo el no determinismo! Ahora que
-he explicado el concepto del no determinismo, veamos qué es el `call-time choice'. En la
+hemos explicado el concepto del no determinismo, veamos qué es el `call-time choice'. En la
 declaración \verb`double x = x + x`, \verb`x` aparece como argumento. Esto significa que
 todas las apariciones de \verb`x` corresponderán al mismo valor. Si evaluamos
 \verb`double coin` obtendremos solamente dos resultados, \verb`0` y \verb`2`. Si por el
@@ -98,7 +98,7 @@ cuatro resultados, \verb`0, 1, 1, 2`. Es decir, en la semántica de `call-time c
 si los valores de los argumentos se eligen en la llamada de la función y lo `comparten' en
 toda la expresión.
 
-\subsubsection{run-time choice}
+\subsubsection{Run-time choice}
 La semántica `run-time choice' es mucho más simple. Los valores de las piezas no
 deterministas no se comparten. Cada aparición de una pieza no determinista generará todos los
 resultados que le corresponden. En un lenguaje con estas características la evaluación de
@@ -122,10 +122,10 @@ especifican cuando compartir el valor de una variable en todas sus apariciones a
 una expresión. Posteriormente daremos ejemplos de uso de esta semántica.
 
 \subsection{Objetivos}
-Mi objetivo en este trabajo de fin de grado es crear un lenguaje funcional que combine las
-dos semánticas anteriores. Para ello, el lenguaje tendrá primitivas para especificar cuándo
-las piezas no deterministas de una expresión deben compartir el mismo valor y cuándo se
-tienen que comportar de la misma forma que en run-time choice. Este lenguaje tendrá
+Nuestro objetivo en este trabajo de fin de grado es crear un lenguaje funcional que combine
+las dos semánticas anteriores. Para ello, el lenguaje tendrá primitivas para especificar
+cuándo las piezas no deterministas de una expresión deben compartir el mismo valor y cuándo
+se tienen que comportar de la misma forma que en run-time choice. Este lenguaje tendrá
 características propias de un lenguaje funcional moderno, como orden superior, evaluación
 perezosa, expresiones lambda, etc. Todo ello combinado con el no determinismo, por ejemplo,
 una pieza en una expresión se puede corresponder con una función indeterminista. Todo estará

@@ -12,21 +12,21 @@
 
 This document is part of the result of a academic year of work to complete the BSc Thesis for
 the Computer Science Engineering degree at the Complutense University of Madrid. In this
-document I tackle the proposal and implementation of a small and simple functional language
+document we tackle the proposal and implementation of a small and simple functional language
 with standard features in functional languages such as higher order and pattern matching, to
 which is added another one not usual in this paradigm, but in an extension of it, the
 so-called functional logic programming \cite{antoy2010functional}, which combines features of
 independent paradigms of logical and functional programming. From the first it adopts in
 particular the possibility of indeterministic computations that are sustained in the most
 well-known languages of the paradigm such as Curry \cite{Hanus16Curry} and Toy
-\cite{fraguas1999toy}, of the notion of non-deterministic function, that is to say, a
+\cite{fraguas1999toy}, through the notion of non-deterministic function, that is to say, a
 function that for given arguments can return more than one value.
 
 In classical works such as \cite{hussmann1993nondeterminism} there is a relationship between
-two fundamental types of semantics for indeterminism in functional or equational programming
-in general: semantics of no sharing (commonly known as `run-time choice') or semantics of
-sharing (call-time choice). In the section \ref{sec:prog_func_ind} we explain the difference
-between the two types.
+two fundamental types of semantics for indeterminism in functional or equational programming:
+semantic of no sharing (commonly known as `run-time choice') or semantic of sharing
+(call-time choice). In the section \ref{sec:prog_func_ind} we explain the difference between
+the two types.
 
 The standard approach to functional logic programming, whose theoretical foundations are
 found in \cite{DBLP:journals/jlp/Gonzalez-MorenoHLR99} has considered that the most suitable
@@ -97,7 +97,7 @@ we will get only two results, \verb`0` and \verb`2`. If we simply evaluate the e
 say, in the semantics of `call-time choice' it is as if the values of the arguments are
 chosen in the call of the function and `share' it in all the expression.
 
-\subsubsection{run-time choice}
+\subsubsection{Run-time choice}
 The semantics `run-time choice' is much simpler. The values of non deterministic parts are
 not shared. Each appearance of a non-deterministic piece will generate all the results that
 correspond to it. In a language with these characteristics the evaluation of
@@ -120,7 +120,7 @@ present in Sharade, which specify when to share the value of a variable in all i
 apparitions throughout an expression. Later we will give examples of the use of this
 semantics.
 
-\subsection{Objetives}
+\subsection{Objectives}
 My purpose in this BSc Thesis is to create a functional language that combines the
 two previous semantics. To do this, the language will have primitives to specify when
 nondeterministic pieces of an expression must share the same value and when they must
@@ -130,8 +130,8 @@ expressions, etc. All this combined with non-determinism, for example, a part in
 expression can correspond to an indeterministic function. Everything will be implemented in
 Haskell taking advantage of features it already has as standard in addition to a series of
 libraries. The language is simple for a matter of dimensions of the work and to show the the
-core of it, the combination of the two semantics. Efficiency is not pursued, but in the
-section \ref{sec:rendimiento} the performance is discussed and some ideas are given for
+core of it, that is, the combination of the two semantics. Efficiency is not pursued, but in
+the section \ref{sec:rendimiento} the performance is discussed and some ideas are given for
 improve it.
 
 To combine the two types of semantics, Sharade has a primitive structure
@@ -176,7 +176,7 @@ done when it is required. If the programming was already tedious before, now it 
 since a higher level of monads is added, making necessary more extractions of values of the
 monads, more lines of code.
 
-It turns out then the convenienve of creating e a small language where all the syntax is
+It turns out then the convenienve of creating a small language where all the syntax is
 discharged, but wide enough to express what concerns us, the combination of semantics and
 their usefulness. With a behavior of `run-time choice' by default and at the request of the
 programmer, `call-time choice' on a specified variable.
@@ -187,17 +187,17 @@ function is discussed in the section \ref{sec:traduccion}.
 
 \subsection{Document structure}
 This document is intended for people with minimal Haskell knowledge even if they don't know
-what non-deterministic programming is. To this end, at this introductory point I have
-explained what this paradigm is about with existing languages such as Curry. Later I will
+what non-deterministic programming is. To this end, at this introductory point we have
+explained what this paradigm is about with existing languages such as Curry. Later we will
 explain how Sharade approaches this paradigm with the combination of the two types of
 semantics that concern us. The rest of the paper deals with the implementation of Sharade.
 Due to the complexity underlying the implementation of this paradigm in Haskell, it is
 necessary to explain quite a few monadic programming concepts in section \ref{sec:con_prev}.
-Then I will comment on the implementation of Fischer that solves the problem of sharing with
-lazy evaluation in the section \ref{sec:explicit_sharing}. In point \ref{sec:parsec} I will
-make a brief explanation about the library \verb`Parsec` that I use to perform the Sharade
+Then we will comment on the implementation of Fischer that solves the problem of sharing with
+lazy evaluation in the section \ref{sec:explicit_sharing}. In point \ref{sec:parsec} we will
+make a brief explanation about the library \verb`Parsec` that we use to perform the Sharade
 syntax analysis. Once the reader is comfortable with the concepts of monadic programming,
-indeterminism and the two semantics, I will approach the implementation of Sharade, from
+indeterminism and the two semantics, we will approach the implementation of Sharade, from
 parsing, type analysis and translation. Finally there will be a section of conclusions, where
 I will collect some comments on performance, how to improve the implementation of the
 project, how new features can be incorporated into the language, such as user types, other

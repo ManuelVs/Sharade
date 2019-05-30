@@ -41,7 +41,7 @@ important semantic richness, reason why we believe that this combination or simi
 can be the base of future works about programming with nondeterministic functions.
 
 Although the work developed here satisfies the proposed objectives, it is far from exhausting
-all the possibilities of the topic addressed. In fact, there is plenty of room for new
+all the possibilities of the topic addressed. In fact, there is plenty of place for new
 developments. It is clear to us that there is room for improvement in some areas, of which we
 will provide clues as to how this can be done and incorporated into existing work, as
 discussed below.
@@ -122,7 +122,7 @@ sort ls = share (perm ls) >>= (\sls -> (isSorted sls) >>= (\pec ->
 Previously explained, each funcional application must be done with the infix operator
 \verb`<#>`, because the function and the value are inside a monad. If we delete this overhead
 and returning to the normal aspect of functions in Haskell, we obtain code similar to
-Fischer's implementation. As I said before, it takes to sort a list of 20 elements nearly
+Fischer's implementation. As we said before, it takes to sort a list of 20 elements nearly
 18 seconds, very close to Fischer's implementation. This result is very satisfying since it
 is a relatively easy optimization to carry out in the future. In fact, there is a partial
 implementation in \verb`optv1` branch on the GitHub repository. It's partial because it lacks

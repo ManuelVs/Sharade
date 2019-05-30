@@ -91,8 +91,8 @@ las funciones que implementa son deterministas, en Sharade todas deben ser no de
 Esto produce una sobrecarga bastante importante de programación monádica, lo que lleva a una
 pérdida del rendimiento de cerca del 50\%. Fischer en su biblioteca también hace un uso
 intensivo de la programación monádica, pero es capaz de llevar a cabo muchas optimizaciones
-en el código para reducir este uso, tarea que no he realizado en mi implementación de la
-traducción.
+en el código para reducir este uso, tarea que no hemos realizado en nuestra implementación de
+la traducción.
 
 Aplicando a mano la primera optimización propuesta en el apartado de `Traducción a Haskell',
 el ejemplo de `permutationsort' observa una mejora de rendimiento muy notable, más del 50\%,
@@ -129,8 +129,8 @@ sort ls = share (perm ls) >>= (\sls -> (isSorted sls) >>= (\pec ->
 Como se explica en la traducción, cada aplicación funcional se debe hacer con el operador
 infijo \verb`<#>`, ya que la función esta escondida en una mónada y también el valor.
 Quitando toda esa sobrecarga y devolviendo a las funciones su aspecto habitual, queda un
-código bastante parecido al de Fischer. Como ya he dicho antes, tarda en ordenar una lista de
-20 elementos 18 segundos, una marca muy cercana a la que consigue Fischer en su
+código bastante parecido al de Fischer. Como ya hemos dicho antes, tarda en ordenar una lista
+de 20 elementos 18 segundos, una marca muy cercana a la que consigue Fischer en su
 implementación. Este resultado me resulta bastante satisfactorio, ya que es una optimización
 relativamente fácil de llevar a cabo en un futuro. De hecho, hay una implementación parcial
 de esta idea en la rama \verb`optv1` del repositorio de GitHub. Es parcial porque no realiza
@@ -144,14 +144,14 @@ La forma de recolectar los resultados parece ser bastante importante en el mundo
 programación indeterminista. Por ejemplo, el compilador KiCS2 de Curry ofrece varias formas
 de hacer la búsqueda en el espacio de resultados\cite{hanus2012search}.
 
-Mi lenguaje proporciona dos formas de recolectar los resultados, explicadas anteriormente,
+Sharade proporciona dos formas de recolectar los resultados, explicadas anteriormente,
 que son las implementaciones de Fischer. Pero también se da al usuario la posibilidad de
 implementar sus propias fórmulas de búsqueda, dando la posibilidad de descartar resultados
 para aumentar el rendimiento, como una búsqueda de ramificación y poda. También se pueden
 implementar búsquedas más simples. como una búsqueda en anchura, en profundidad iterativa o
 una búsqueda paralela multihilo. Por último quería destacar que no hay ningún motivo técnico
 en la implementación que pueda hacer que una búsqueda que no cumpla con las leyes de Fischer
-provoque un mal funcionamiento de la biblioteca y, por extensión, en mi implementación.
+provoque un mal funcionamiento de la biblioteca y, por extensión, en nuestra implementación.
 
 Fischer tiene un trabajo\cite{fischer2009reinventing} sobre cómo modificar el sistema de
 backtracking en programación monádica en Haskell. En concreto, muestra cómo implementar la

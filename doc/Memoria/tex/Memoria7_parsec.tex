@@ -79,13 +79,13 @@ analizador tiene éxito, no hace nada, pero en caso de que falle, actualiza el e
 y falla, para poder utilizar otro analizador.
 
 El lenguaje también ofrece primitivas para operadores binarios e infijos de distinta
-asociatividad. No he aprovechado estas primitivas en mi implementación debido a la poca
-flexibilidad que ofrecían para generar expresiones.
+asociatividad. No hemos aprovechado estas primitivas en nusetra implementación debido a la
+poca flexibilidad que ofrecían para generar expresiones.
 
 Gracias a la gran flexibilidad del tipo \verb`ParsecT` se pueden crear gran cantidad de
-extensiones para la biblioteca. Dos extensiones que he utilizado son \verb`parsec3-numbers` y
-\verb`indents`. La extensión \verb`parsec3-numbers` permite analizar números enteros y reales
-en gran cantidad de formatos, con más potencia que el analizador por defecto de
+extensiones para la biblioteca. Dos extensiones que hemos utilizado son \verb`parsec3-numbers`
+y \verb`indents`. La extensión \verb`parsec3-numbers` permite analizar números enteros y
+reales en gran cantidad de formatos, con más potencia que el analizador por defecto de
 \verb`Parsec`. La extensión \verb`indents` es capaz de tener en cuenta la indentación, muy
 útil para analizar ciertas expresiones, como `case of', un grupo de definiciones de funciones
 o un conjunto de expresiones `choose' o `let'.

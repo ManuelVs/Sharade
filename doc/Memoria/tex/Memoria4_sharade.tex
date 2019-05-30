@@ -142,10 +142,10 @@ Las únicas piezas no deterministas en este programa son las definiciones de \ve
 \verb`word` y \verb`palindrome`. Una letra puede tener cuatro posibles valores y una palabra
 puede ser la cadena vacía (\verb`Nil`) o una letra seguida de una palabra. Así, una letra
 tiene el tipo \verb`Char` y una palabra el tipo \verb`[Char]`. Un palíndromo es una palabra
-concatenada con su inversa. Por simplicidad en el ejemplo, no he considerado los palíndromos
-de longitud impar. Las funciones auxiliares son deterministas y no difieren en nada de como
-se programarían en un lenguaje funcional tradicional. En este ejemplo se puede ver la
-combinación de las dos semánticas, `run-time choice' en \verb`word` y `call-time
+concatenada con su inversa. Por simplicidad en el ejemplo, no hemos considerado los
+palíndromos de longitud impar. Las funciones auxiliares son deterministas y no difieren en
+nada de como se programarían en un lenguaje funcional tradicional. En este ejemplo se puede
+ver la combinación de las dos semánticas, `run-time choice' en \verb`word` y `call-time
 choice' en \verb`palindrome`. Completemos el ejemplo:
 
 \begin{minted}[bgcolor=bg]{haskell}
@@ -255,7 +255,7 @@ si se ha consumido toda la entrada y el autómata se encuentra en el estado 2.
 
 \subsubsection{Ordenación por permutación}
 
-Este ejemplo es el que usa Fischer para mostrar la biblioteca en la que me he basado para
+Este ejemplo es el que usa Fischer para mostrar la biblioteca en la que nos hemos basado para
 construir Sharade. Este tipo de ordenación es simplemente para un ejemplo y no tiene
 ningún uso práctico, ya que este algoritmo de ordenación es extremadamente ineficiente.
 Consiste en calcular todas las permutaciones de una lista y comprobar si alguna de ellas está
@@ -263,10 +263,10 @@ ordenada. Con la evaluación perezosa quizás no es necesario calcular toda la p
 completa, ya que solo con mirar los dos primeros elementos de la lista puedes descartar todo
 el subárbol de permutaciones que se podrían generar. Fischer lo utiliza para mostrar que
 funciona la evaluación perezosa y por tanto se pueden descartar permutaciones sin necesidad
-de calcularlas enteras. Lo he querido poner como ejemplo para mostrar de nuevo la semántica
-`call-time choice' de Sharade y posteriormente para analizar la pérdida de rendimiento de
-Sharade. Como el ejemplo puede resultar complejo la primera vez, he decidido separarlo por
-trozos para explicarlo mejor.
+de calcularlas enteras. Lo hemos querido poner como ejemplo para mostrar de nuevo la
+semántica `call-time choice' de Sharade y posteriormente para analizar la pérdida de
+rendimiento de Sharade. Como el ejemplo puede resultar complejo la primera vez, hemos
+decidido separarlo por trozos para explicarlo mejor.
 
 \begin{minted}[bgcolor=bg]{haskell}
 insert e ls = (Cons e ls) ? case ls of
@@ -450,9 +450,9 @@ no se pueden especificar en la definición de las funciones.
 Instalar la biblioteca Sharade y el compilador es relativamente sencillo. Para empezar, se
 necesita una versión especifica de una biblioteca que no existe en el repositorio de paquetes
 de Haskell, Hackage. Esta biblioteca es \verb`explicit-sharing`. Su autor original, como ya
-he dicho en múltiples ocasiones, es Fischer, pero he tenido que hacer unos retoques para
-hacerla compatible con las nuevas versiones de Haskell. Para instalar esta biblioteca, se
-puede usar la siguiente ristra de comandos:
+hemos dicho en múltiples ocasiones, es Fischer, pero hemos tenido que hacer unos retoques
+para hacerla compatible con las nuevas versiones de Haskell. Para instalar esta biblioteca,
+se puede usar la siguiente ristra de comandos:
 
 \begin{minted}[bgcolor=bg]{bash}
 # Clonar el repositorio
@@ -467,7 +467,7 @@ cabal install dist/explicit-sharing*.tar.gz
 cabal clean
 \end{minted}
 
-Ahora hay que hacer algo parecido para instalar mi biblioteca y compilador:
+Ahora hay que hacer algo parecido para instalar nuestra biblioteca y compilador:
 
 \begin{minted}[bgcolor=bg]{bash}
 # Clonar el repositorio

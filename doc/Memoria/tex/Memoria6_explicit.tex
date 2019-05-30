@@ -23,7 +23,7 @@ lenguaje para mostrar la combinación de semánticas.
 
 \subsection{Biblioteca explicit-sharing}\label{sec:explicit_sharing}
 Aunque el paradigma del no determinismo ya está completo en Haskell con las herramientas que
-he explicado más arriba, en concreto con cualquier tipo que pertenezca a la clase
+hemos explicado más arriba, en concreto con cualquier tipo que pertenezca a la clase
 \verb`MonadPlus`, perdemos ciertas características, como la evaluación perezosa. Sin esta
 característica, no podríamos trabajar con estructuras de datos infinitas o desechar cómputos
 que que no nos interesen. Vamos a ver una serie de ejemplos para ilustrar esta pérdida de
@@ -311,7 +311,7 @@ La línea \verb`a <- [1,2,3,4]` actúa como fuente, \verb`v` irá tomando los va
 devolverán incrementados en uno. Los cómputos solo se efectúan cuando es necesario,
 proporcionando una evaluación perezosa bastante sofisticada.
 
-Como ya he dicho al principio de este punto, esta implementación respeta las tres leyes
+Como ya hemos dicho al principio de este punto, esta implementación respeta las tres leyes
 básicas de las que habla Fischer, pero solo es capaz de compartir enteros. En el siguiente
 punto explicaré una implementación muy parecida a la que usa Fischer en su biblioteca.
 
@@ -496,7 +496,7 @@ indeterminismo combinando `call-time choice' y `run-time choice'. También deja 
 tarea en Haskell es complicada, propenso a errores y difícil de entender para nuevos
 ingresados en la materia.
 
-Sin embargo, como ya he dicho antes, Sharade es capaz de reducir esta complejidad,
+Sin embargo, como ya hemos dicho antes, Sharade es capaz de reducir esta complejidad,
 descargando bastante la sintaxis y ofreciendo una abstracción de la programación monádica,
 indeterminismo y combinando los dos tipos de semánticas muy potentes.
 
