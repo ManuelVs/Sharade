@@ -6,13 +6,13 @@
 
 \section{Abstract}
 
-This paper proposes and implements a functional language that implements common features of
-this paradigm, such as higher order functions, pattern matching or lazy evaluation. It adds
-features that are not as common as indeterminism, expressed through non-deterministic
-functions, that is, functions that for given arguments can return more than one result. This
-type of functions exist in the so-called functional logic languages, which adopt for
-indeterminism a semantics of sharing (call-time choice), in contrast with the semantics of
-not sharing (runtime choice) more typical of other formalisms, such as rewriting systems.
+This paper proposes and implements a functional language that incorporates common features of
+this paradigm, such as higher order functions, pattern matching or lazy evaluation. It adds a
+not so common feature, namely non-determinism, expressed through non-deterministic functions,
+that is, functions that for given arguments can return more than one result. This type of
+functions exist in the so-called functional logic languages, which adopt for indeterminism a
+semantics of sharing (call-time choice), in contrast with the semantics of not sharing
+(run-time choice) more typical of other formalisms, such as rewriting systems.
 
 The specific thing about the new language that will be proposed and implemented,
 \textit{Sharade}, is that it will combine both types of semantics through primitives that
@@ -22,18 +22,17 @@ The implementation of the language is done entirely in Haskell, in contrast to t
 implementations of functional logic languages, usually based on Prolog. Haskel is a pure
 functional language with a very strong type system, being the reference language in the field
 of functional programming with lazy evaluation. Apart from auxiliary phases such as syntactic
-analysis and type inference, it is also the reference language in the field of functional
-programming with lazy evaluation. The essential part of the implementation consists of a
+analysis and type inference, the essential part of the implementation consists of a
 process of translating Sharade source programs into Haskell object programs, thus enabling
 many of the latter's features as a functional language. The object programs make intensive
 use of monadic programming, in particular through a Haskell library for programming with
 indeterminism with call-time choice and lazy evaluation, library already existing but that
-has had to be adapted by us to update it to the new versions of Haskell.
+has had to be adapted by us to update it to new versions of Haskell.
 
 \vspace{0.5cm}
 \textbf{Keywords}
 
-Functional programming, non determinism, Curry, Toy, Sharade, Sharing, Call time Choice,
-Runtime Choice, Monads, Hindley-Milner
+Functional programming, non determinism, Curry, Toy, Sharade, Sharing, Call-time Choice,
+Run-time Choice, Monads, Hindley-Milner
 
 \end{document}

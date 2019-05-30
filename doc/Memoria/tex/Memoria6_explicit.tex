@@ -12,7 +12,7 @@
 \section{Call-time choice y evaluación perezosa}
 Uno de los problemas que tiene la programación indeterminista en Haskell es que no cuenta con
 construcciones que permitan la compartición de valores indeterministas en una expresión.
-Recordemos que la semántica por defecto es la ya comentada `runtime choice'. Se podría
+Recordemos que la semántica por defecto es la ya comentada `run-time choice'. Se podría
 simular el comportamiento de la semántica `calltime choice' si se extrajesen los valores de
 las mónadas para luego operar con ellos, pero esto plantea un inconveniente bastante
 importante, se pierde la evaluación perezosa, ya que al extraer el valor de la mónada estamos
@@ -27,7 +27,7 @@ he explicado más arriba, en concreto con cualquier tipo que pertenezca a la cla
 \verb`MonadPlus`, perdemos ciertas características, como la evaluación perezosa. Sin esta
 característica, no podríamos trabajar con estructuras de datos infinitas o desechar cómputos
 que que no nos interesen. Vamos a ver una serie de ejemplos para ilustrar esta pérdida de
-características\cite{fischer2011purely}:
+características \cite{fischer2011purely}:
 
 \begin{minted}[bgcolor=bg]{haskell}
 import Control.Monad
@@ -86,7 +86,7 @@ características mínimas:
 
 La tercera ley es fundamental para el correcto funcionamiento de la semántica `calltime
 choice'. La diferencia entre las dos semánticas se aprecia bastante bien en términos
-abstractos a través de una propiedad esencial que verifica `call-time choice' y no `runtime
+abstractos a través de una propiedad esencial que verifica `call-time choice' y no `run-time
 choice'. Para formularla, introducimos una notación que explicamos vía ejemplos.
 \begin{itemize}
   \item[-]  $\llbracket e\rrbracket$ $\rightarrow$ Es el conjunto de valores en el que se
@@ -108,8 +108,7 @@ $\llbracket duplicate \: (0 \: ? \: 1)\rrbracket = \{0, 2\}$ \\
 $\llbracket duplicate \:0\rrbracket\:\bigcup\:\llbracket duplicate \: 1\rrbracket
 =\{0\} \:\bigcup\: \{2\}$ \\
 $\llbracket duplicate \:0 \:?\: duplicate \:1\rrbracket = \{0\} \:\bigcup\: \{2\}$ \\
-Esta propiedad la describe F. J. López Fraguas en \textit{A Simple Rewrite Notion for
-Call-time Choice Semantics}\cite{lopez2007simple}.
+Esta propiedad la describe F. J. López Fraguas en \cite{lopez2007simple}.
 
 Las leyes Fail, Choice e Ignore hacen que se cumplan ciertos comportamientos en las
 implementaciones que aseguran la evaluación perezosa y la compartición de nodos en una
@@ -417,7 +416,7 @@ e3 = f undefined coin
 La primera definición se corresponde con \verb`coin = 0 ? 1` de Sharade. Como \verb`mplus`
 opera con dos valores monádicos, es necesario meter el 0 y el 1 en sus respectivas mónadas
 para luego juntarlas. La definición de \verb`duplicate` se corresponde con la definición en
-Sharade de \verb`duplicate x = x + x`. Para conseguir las propiedades de `runtime choice' en
+Sharade de \verb`duplicate x = x + x`. Para conseguir las propiedades de `run-time choice' en
 Haskell, es necesario `extraer' dos veces un valor del argumento. La función \verb`f` la
 pongo de ejemplo para mostrar la evaluación perezosa y demostrar que la ley `Fail' e `Ignore'
 funcionan en el tercer ejemplo.
@@ -493,7 +492,7 @@ palindrome = choose w = word in
 habiendo definido antes las funciones auxiliares, claro.
 
 Estos ejemplos muestran cómo es posible expresar directamente en Haskell la programación con
-indeterminismo combinando `call-time choice' y `runtime choice'. También deja claro que esta
+indeterminismo combinando `call-time choice' y `run-time choice'. También deja claro que esta
 tarea en Haskell es complicada, propenso a errores y difícil de entender para nuevos
 ingresados en la materia.
 

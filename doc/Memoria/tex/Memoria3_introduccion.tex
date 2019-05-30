@@ -15,67 +15,66 @@ Madrid. En este documento abordo la propuesta e implementación de un pequeño y
 lenguaje funcional con características habituales en lenguajes funcionales como el orden
 superior y ajuste de patrones, a las que se añade otra no habitual en este paradigma, pero sí
 en una extensión de él, la denominada programación lógico
-funcional\cite{antoy2010functional}, que combina características de los paradigmas
+funcional \cite{antoy2010functional}, que combina características de los paradigmas
 independientes de programación lógica y funcional. Del primero adopta en particular la
 posibilidad de cómputos indeterministas que se encuentran sustentados en los lenguajes más
-conocidos del paradigma como Curry\cite{Hanus16Curry} y Toy\cite{fraguas1999toy}, en la
+conocidos del paradigma como Curry \cite{Hanus16Curry} y Toy \cite{fraguas1999toy}, en la
 noción de función indeterminista, es decir, función que para unos argumentos dados puede
 devolver más de un valor.
 
-En trabajos clásicos como \textit{Nondeterminism in algebraic specifications and algebraic
-programs}\cite{hussmann1993nondeterminism} se dispone entre dos tipos fundamentales de
-semántica para el indeterminismo en programas funcionales o ecuaciones en general:
-semántica de no compartición (conocida habitualmente como `runtime choice') o semánticas de
-compartición (call-time choice). En el apartado \ref{sec:prog_func_ind} explicamos la
-diferencia entre ambas.
+En trabajos clásicos \cite{hussmann1993nondeterminism} se distingue entre dos tipos
+fundamentales de  semántica para el indeterminismo en programas funcionales o ecuacionales en
+general: semántica de no compartición (conocida habitualmente como `run-time choice') o
+semánticas de compartición (call-time choice). En el apartado \ref{sec:prog_func_ind}
+explicamos la diferencia entre ambas.
 
 La corriente estándar de la programación lógico funcional, cuyos fundamentos teóricos se
-encuentran en \textit{An Approach to Declarative Programming Based on a Rewriting Logic
-}\cite{DBLP:journals/jlp/Gonzalez-MorenoHLR99} ha considerado que la semántica más adecuada
-para la programación práctica es la de call-time choice, que es por ese motivo la adoptada en
-lenguajes como Curry o Toy.
+encuentran en \cite{DBLP:journals/jlp/Gonzalez-MorenoHLR99} ha considerado que la semántica
+más adecuada para la programación práctica es la de call-time choice, que es por ese motivo
+la adoptada en lenguajes como Curry o Toy.
 
 Las implementaciones tradicionales de estos lenguajes han estado basadas en compilación a
-Prolog\cite{deransart2012prolog}, es decir, los programas originales se traducen a programas
+Prolog \cite{deransart2012prolog}, es decir, los programas originales se traducen a programas
 Prolog objeto, de modo que la ejecución Prolog de estos ya expresa correctamente la semántica
-de los programas originales. Esta tendencia cambió en
-KiCS2\cite{BrasselHanusPeemoellerReck11}, una implementación de Curry basada en Haskell, en
-la que el modo que se captura la semántica de call-time choice resulta bastante oscuro y
+de los programas originales. Esta tendencia cambió en KiCS2
+\cite{BrasselHanusPeemoellerReck11}, una implementación de Curry basada en Haskell, en la que
+el modo en el que se captura la semántica de call-time choice resulta bastante oscuro y
 dependiente de aspectos de bajo nivel. Más adelante, S. Fischer realizó otra propuesta
 puramente funcional para la semántica de call-time choice con evaluación
-perezosa\cite{fischer2011purely} que resulta mucho más clara y abstracta. Esta propuesta
-quedó plasmada en una biblioteca de Haskell que, con las adaptaciones necesarias, ha
-constituido una base importante de este trabajo.
+perezosa \cite{fischer2011purely} que resulta mucho más clara y abstracta. Esta propuesta
+quedó plasmada en una biblioteca de Haskell, \verb`explicit-sharing` que, con las
+adaptaciones necesarias, ha constituido una base importante de este trabajo.
 
-De manera independiente, en otros trabajos\cite{riesco2014singular} se desarrolla la tarea de
-combinar las dos semánticas citadas. Sin embargo, esas propuestas solo se implementaron como
-`parches' en el sistema Toy cuya implementación está basada en Prolog.
+De manera independiente, en otros trabajos \cite{riesco2014singular} se desarrolla la tarea
+de combinar las dos semánticas citadas. Sin embargo, esas propuestas solo se implementaron
+como `parches' muy poco abstractos en el sistema Toy cuya implementación está basada en
+Prolog.
 
-La parte esencial de este trabajo es crear un lenguaje puramente funcional donde se vea el
-potencial de la combinación de los dos tipos de semánticas y lo que ello puede suponer para
-la descripción de algoritmos indeterministas. Hay ejemplos prácticos donde ninguna de las dos
-semánticas se adapta bien para resolver un problema pero sí una combinación de ambas.
-Intentaré plasmar la utilidad de esta combinación en ejemplos de uso a lo largo de este
-documento.
+La parte esencial de este trabajo del trabajo que presentamos aquí es crear un lenguaje
+puramente funcional donde se vea el potencial de la combinación de los dos tipos de
+semánticas y lo que ello puede suponer para la descripción de algoritmos indeterministas.
+Hay ejemplos prácticos donde ninguna de las dos semánticas se adapta bien para resolver un
+problema pero sí una combinación de ambas. Intentaré plasmar la utilidad de esta combinación
+en ejemplos de uso a lo largo de este documento.
 
 \subsection{Programación con funciones no deterministas}\label{sec:prog_func_ind}
 La programación no determinista ha demostrado en varias ocasiones simplificar la forma en la
 que un algoritmo puede ser escrito, como por ejemplo en lenguajes como Prolog, Curry y Toy.
-Personas como Antony y Hanus opinan que esto es debido a que los resultados pueden ser vistos
-individualmente en vez de como elementos pertenecientes a un conjunto de posibles
-resultados\cite{antoy2010functional}. Un ejemplo recurrente para explicar la programación no
-determinista suele ser el resultado indeterminista de una moneda lanzada al aire, cara o
+En \cite{antoy2010functional} se alega que esto es debido a que los resultados pueden ser
+vistos individualmente en vez de como elementos pertenecientes a un conjunto de posibles
+resultados. Un ejemplo recurrente para explicar algunos aspectos básicos de la programación
+no determinista suele ser el resultado indeterminista de una moneda lanzada al aire, cara o
 cruz, 0 o 1, para luego proceder a explicar las formas de las que se puede entender una
 expresión con este valor determinista, cómo funcionaría una suma de estos valores o cómo
 funcionaría una llamada a una función. Si esa pieza aparece múltiples veces ¿deben tener
 todas ellas el mismo valor o pueden tener distintos? Tradicionalmente en la programación no
 determinista existen dos tipos de semántica que nos dicen como interpretar estas piezas no
-deterministas. Estas dos semánticas son el `Call-time choice' y el `Runtime choice'.
+deterministas. Estas dos semánticas son denominadas `Call-time choice' y `run-time choice'.
 
 \subsubsection{Call-time choice}
 Conceptualmente, la semántica `call-time choice' consiste en elegir el valor no determinista
-de cada uno de los argumentos de una función antes de aplicarlos\cite{fischer2011purely}. Uno
-de estos lenguajes es Curry. Veamos un ejemplo de este comportamiento:
+de cada uno de los argumentos de una función antes de aplicarlos \cite{fischer2011purely}.
+Uno de estos lenguajes es Curry. Veamos un ejemplo de este comportamiento:
 
 \begin{minted}[bgcolor=bg]{haskell}
 choose x _ = x
@@ -99,8 +98,8 @@ cuatro resultados, \verb`0, 1, 1, 2`. Es decir, en la semántica de `call-time c
 si los valores de los argumentos se eligen en la llamada de la función y lo `comparten' en
 toda la expresión.
 
-\subsubsection{Runtime choice}
-La semántica `runtime choice' es mucho más simple. Los valores de las piezas no
+\subsubsection{run-time choice}
+La semántica `run-time choice' es mucho más simple. Los valores de las piezas no
 deterministas no se comparten. Cada aparición de una pieza no determinista generará todos los
 resultados que le corresponden. En un lenguaje con estas características la evaluación de
 \verb`double coin` del ejemplo anterior sí producirá los cuatro resultados.
@@ -113,21 +112,20 @@ un mismo resultado a lo largo de toda la expresión.
 
 \subsubsection{Otras semánticas}
 Existen otras semánticas en el campo de la programación indeterminista, como la especificada
-en el trabajo \textit{Singular and plural functions for functional logic programming}\cite{
-riesco2014singular}, que se propone por la falta de concisión de la semántica `runtime
-choice' cuando el ajuste de patrones entran en juego.
+en el trabajo \cite{riesco2014singular}, que se propone por la falta de concisión de la
+semántica `run-time choice' cuando el ajuste de patrones entran en juego.
 
 Otra semántica es precisamente la combinación de los dos tipos de semánticas comentadas
-anteriormente, que es el corazón de este trabajo. En nuestro trabajo la combinación se
-consigue con primitivas presentes en Sharade, que especifican cuando compartir el valor de
-una variable en todas sus apariciones a lo largo de una expresión. Posteriormente daremos
-ejemplos de uso de esta semántica.
+anteriormente, considerada en \cite{riesco2014singular} y que es el corazón de este trabajo.
+En nuestro trabajo la combinación se consigue con primitivas presentes en Sharade, que
+especifican cuando compartir el valor de una variable en todas sus apariciones a lo largo de
+una expresión. Posteriormente daremos ejemplos de uso de esta semántica.
 
 \subsection{Objetivos}
 Mi objetivo en este trabajo de fin de grado es crear un lenguaje funcional que combine las
-dos semánticas anteriores. Para ello, el lenguaje tendrá primitivas para especificar cuando
-las piezas no deterministas de una expresión deben compartir el mismo valor y cuando se
-tienen que comportar de la misma forma que en runtime choice. Este lenguaje tendrá
+dos semánticas anteriores. Para ello, el lenguaje tendrá primitivas para especificar cuándo
+las piezas no deterministas de una expresión deben compartir el mismo valor y cuándo se
+tienen que comportar de la misma forma que en run-time choice. Este lenguaje tendrá
 características propias de un lenguaje funcional moderno, como orden superior, evaluación
 perezosa, expresiones lambda, etc. Todo ello combinado con el no determinismo, por ejemplo,
 una pieza en una expresión se puede corresponder con una función indeterminista. Todo estará
@@ -142,7 +140,7 @@ Para combinar los dos tipos de semánticas, Sharade tiene una estructura primiti
 comportamiento en el que el identificador ligado que se crea en la parte de la izquierda
 compartirá el valor en todas las apariciones de ese identificador en la parte derecha. Es
 decir, tiene el mismo comportamiento que `call-time choice'. Si no se especifica nada, mi
-lenguaje semánticamente se comporta igual que `runtime choice'. Por ejemplo:
+lenguaje semánticamente se comporta igual que `run-time choice'. Por ejemplo:
 
 \begin{minted}[bgcolor=bg]{haskell}
 coin = 0 ? 1 ;
@@ -159,15 +157,14 @@ Sharade, significa lo mismo que la función \verb`choose` del ejemplo anterior.
 
 En resumen, Sharade combina los dos tipos de semántica, dejando al usuario especificar qué
 piezas se van a comportar como lo harían en `call-time choice'. Esta combinación de las dos
-semánticas no lo hemos visto en la literatura ya existente. Sí es cierto que existe una
-aproximación parecida en \textit{A Flexible Framework for Programming with Non-deterministic
-Functions}\cite{lopez2009flexible}, pero no es tan clara ni es explícita como
-la que yo propongo en Sharade.
+semánticas no lo hemos visto en la literatura ya existente, salvo en
+\cite{lopez2009flexible}, pero allí no es tan clara ni explícita como la que yo propongo en
+Sharade, ni se propone una implementación con principios claros.
 
 \subsection{Plan de trabajo}
 Primeramente intentaremos expresar el indeterminismo en Haskell. Para ello nos hará falta una
 cierta soltura en programación monádica. El indeterminismo en Haskell por defecto se trata
-con la semántica de `runtime choice'. Cada vez que se quiera `extraer' un valor de una
+con la semántica de `run-time choice'. Cada vez que se quiera `extraer' un valor de una
 expresión indeterminista (monádica) surgirán todos los resultados. Este tipo de programación
 ya es de por sí bastante farragosa, a pesar de que se pueden usar abstracciones bastante
 elegantes como la notación \verb`do`.
@@ -183,8 +180,8 @@ necesarias más extracciones de valores de las mónadas, más líneas de código
 
 De aquí sale la necesidad de crear un pequeño lenguaje donde se descargue toda la sintaxis,
 pero suficientemente amplio para expresar lo que nos atañe, la combinación de semánticas y su
-utilidad. Con un comportamiento de `runtime choice' por defecto y a petición del programador,
-`call-time choice' sobre una variable especificada.
+utilidad. Con un comportamiento de `run-time choice' por defecto y a petición del
+programador, `call-time choice' sobre una variable especificada.
 
 Con todo esto en mente, es necesaria la creación de un compilador de programas Sharade a
 programas Haskell, con una función de traducción formando parte del corazón del trabajo. Esta
@@ -204,9 +201,10 @@ En el punto \ref{sec:parsec} haré una breve explicación sobre la biblioteca \v
 utilizo para realizar el análisis sintáctico de Sharade. Una vez el lector se sienta cómodo
 con los conceptos de programación monádica, indeterminismo y las dos semánticas, abordaré la
 implementación de Sharade, desde el análisis sintáctico, análisis de tipos y traducción. Por
-último habrá un apartado de conclusiones, donde recogeré algunos comentarios sobre el 
-rendimiento, cómo mejorar la implementación del proyecto, cómo se pueden incorporar nuevas
-características al lenguaje, como tipos de usuario, otras formas de recolectar resultados y
-posibles trabajos futuros.
+último habrá un apartado de conclusiones, donde evaluaré el cumplimiento de los objetivos del
+trabajo, el interés de la propuesta y algunos comentarios sobre Haskell. También recogeré
+algunos comentarios sobre posibles trabajos futuros, como mejorar el rendimiento de Sharade
+y la implementación del proyecto, cómo se pueden incorporar nuevas características al
+lenguaje, como tipos de usuario y otras formas de recolectar resultados.
 
 \end{document}

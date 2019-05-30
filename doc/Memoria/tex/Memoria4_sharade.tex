@@ -14,7 +14,7 @@
 El resultado de este trabajo de fin de grado es un lenguaje funcional con características
 habituales en el paradigma de la programación funcional como el orden superior, evaluación
 perezosa, ajuste de patrones, expresiones lambda, no determinismo, semánticas de compartición
-(call-time choice) y no compartición (runtime choice). Posee la inferencia de tipos de
+(call-time choice) y no compartición (run-time choice). Posee la inferencia de tipos de
 Hindley-Milner pero no se pueden especificar los tipos en la declaración de las funciones. No
 tiene clases de tipos ni permite crear tipos de usuario por cuestiones explicadas más
 adelante. La sintaxis está muy influenciada por Haskell, tiene aplicación parcial (excepto
@@ -29,7 +29,7 @@ reales, los caracteres, las listas y las parejas. Todo esto es debido a que se t
 trabajo de fin de grado donde el objetivo era mostrar de una forma simple y clara la
 combinación de los dos tipos de semánticas. Esta combinación puede ser muy útil, ya que hay
 situaciones prácticas donde ninguna de las dos semánticas son apropiadas pero sí una
-combinación de ellas\cite{lopez2009flexible}, como veremos en los ejemplos más
+combinación de ellas \cite{lopez2009flexible}, como veremos en los ejemplos más
 adelante. La combinación también permite describir algoritmos con mayor flexibilidad y
 otorgando más control al programador. Tal como hemos decidido definir la sintaxis, la
 combinación resulta muy sencilla y limpia, como veremos en el siguiente apartado.
@@ -38,9 +38,9 @@ Existen lenguajes más avanzados con más características y con mejor rendimien
 como pueden ser Curry y Toy. Sharade no persigue el rendimiento (aunque con algunas
 optimizaciones puede llegar a tener un rendimiento similar) ya que su objetivo es incorporar
 a la literatura de la comunidad lógico-funcional algo nuevo, la combinación de dos semánticas
-indeterministas, el `call-time choice' y `runtime choice'. Esto se consigue, desde el punto
+indeterministas, el `call-time choice' y `run-time choice'. Esto se consigue, desde el punto
 de vista de la estructura del lenguaje, asumiendo por defecto un comportamiento de semántica
-de `runtime choice' y a la incorporación de una primitiva que veremos en el siguiente
+de `run-time choice' y a la incorporación de una primitiva que veremos en el siguiente
 apartado mediante ejemplos.
 
 En cuanto a la implementación, que comentaremos durante capítulos sucesivos, la basaremos en
@@ -73,10 +73,10 @@ significa que \verb`number` se puede reducir a uno de esos cuatro valores. La fu
 puede operar con un valor determinista (por ejemplo, un simple \verb`2`) o un valor no
 determinista como \verb`number`. Tradicionalmente hay dos formas de entender este programa.
 Si entiende con la semántica de `call-time choice', \verb`duplicate number` solo tendrá 4
-resultados. Sin embargo, con la semántica `runtime choice' se obtienen 16 resultados,
+resultados. Sin embargo, con la semántica `run-time choice' se obtienen 16 resultados,
 provenientes de todas las combinaciones posibles de los valores de \verb`number`.
 
-Sharade por defecto opera con la semántica de `runtime choice', por lo tanto la expresión
+Sharade por defecto opera con la semántica de `run-time choice', por lo tanto la expresión
 \verb`duplicate number` tiene 16 resultados, de los cuales 12 se repiten por la
 conmutatividad de la suma. En el siguiente ejemplo vamos a ver como podemos operar con la
 otra semántica.
@@ -85,7 +85,7 @@ otra semántica.
 
 Para usar el otro tipo de semántica hay que introducir la primitiva `\verb`choose`'. Es una
 primitiva parecida a una expresión `\verb`let`'. Crea un nuevo ámbito con una nueva variable
-que cumplirá las leyes del `call-time choice'\cite{lopez2007simple}. Es decir, todas sus
+que cumplirá las leyes del `call-time choice' \cite{lopez2007simple}. Es decir, todas sus
 apariciones en una expresión se evaluarán al mismo valor.
 
 \begin{minted}[bgcolor=bg]{haskell}
@@ -111,7 +111,7 @@ f x y = choose a = x in a + a + y + y ;
 \end{minted}
 
 Si se evalúa \verb`duplicate number coin` existen 16 combinaciones. Esto es debido a que la
-variable `\verb`y`' está siguiendo las reglas del `runtime choice' y la variable `\verb`a`'
+variable `\verb`y`' está siguiendo las reglas del `run-time choice' y la variable `\verb`a`'
 las del `call-time choice'.
 
 Se puede pensar que una variable sujeta a la semántica de `call-time choice' es una variable
@@ -145,7 +145,7 @@ tiene el tipo \verb`Char` y una palabra el tipo \verb`[Char]`. Un palíndromo es
 concatenada con su inversa. Por simplicidad en el ejemplo, no he considerado los palíndromos
 de longitud impar. Las funciones auxiliares son deterministas y no difieren en nada de como
 se programarían en un lenguaje funcional tradicional. En este ejemplo se puede ver la
-combinación de las dos semánticas, `runtime choice' en \verb`word` y `call-time
+combinación de las dos semánticas, `run-time choice' en \verb`word` y `call-time
 choice' en \verb`palindrome`. Completemos el ejemplo:
 
 \begin{minted}[bgcolor=bg]{haskell}
@@ -243,7 +243,7 @@ accept f as = accept' f 0 as ;
 Aquí se ven en juego todas las características previamente mencionadas. El ajuste de
 patrones, orden superior y no determinismo. No se ve ningún ejemplo de semántica `call-time
 choice', ya que en este ejemplo no tiene cabida, se quiere usar las características que
-proporciona la semántica `runtime choice'.
+proporciona la semántica `run-time choice'.
 
 Este AFN reconoce las cadenas de caracteres terminadas en `ba'. La función \verb`f` es la
 función de transición. La función de transición en un AFN es no determinista y en este

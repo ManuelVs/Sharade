@@ -68,7 +68,7 @@ Un identificador válido es cualquier cadena de caracteres alfanumérica que emp
 carácter. El lenguaje también permite comentarios de una línea y multilínea, igual que
 Haskell. Los comentarios multilínea empiezan con `\verb`{-`' y terminan con `\verb`-}`'. Los
 comentarios de una sola línea empiezan por `\verb`--`'. La sintaxis no permite la creación de
-nuevos operadores infijos por el usuario, al contrario que Haskell\cite{marlow2010haskell}.
+nuevos operadores infijos por el usuario, al contrario que Haskell \cite{marlow2010haskell}.
 La sintaxis está claramente influenciada por Haskell y Curry. En la sintaxis se incluyen
 también las primitivas necesarias para expresar el no determinismo con compartición y sin
 compartición. El operador \verb`?` expresa la elección de dos valores no deterministas y la
@@ -136,7 +136,7 @@ naturaleza de la traducción (al uso intensivo de la programación monádica), s
 fácilmente en ambigüedades de tipos, por lo que Haskell rechaza el programa con un caso
 particular de error de tipos. Para evitar esta situación, es necesario realizar un análisis
 de tipos sobre el programa en Sharade, con el clásico sistema de
-Hindley-Milner\cite{hindley1969principal}. En el apartado en el que se explica la traducción
+Hindley-Milner \cite{hindley1969principal}. En el apartado en el que se explica la traducción
 a Haskell indicaré cómo se transforman estos tipos inferidos a Haskell.
 
 Veamos los siguientes ejemplos para entender las situaciones de ambigüedad de tipos y cómo
@@ -154,7 +154,7 @@ Si se intenta interpretar esto en Haskell dará un error, debido a la ambigüeda
 Haskell podría elegir una mónada cualquiera para analizar el tipo, pero eso quebraría el
 supuesto de `mundo abierto'. Si se añadiese una nueva instancia que se ajustase mejor a la
 situación, el código que has escrito podría dejar de funcionar o ni siquiera compilar. Veamos
-el segundo ejemplo donde se ve más claro\cite{Lipovaca:2011:LYH:2018642}:
+el segundo ejemplo donde se ve más claro \cite{Lipovaca:2011:LYH:2018642}:
 
 \begin{minted}[bgcolor=bg]{haskell}
 main :: IO ()
@@ -403,7 +403,7 @@ mónada que las envuelve. Esto es así ya que, según las leyes del `call-time c
 \: = \: \llbracket C[f \: x]\rrbracket \: \bigcup \: \llbracket C[g \: x]\rrbracket$. Es
 decir, claramente nos da igual elegir entre las dos funciones y juntar los resultados que
 aplicar las dos funciones por separado y juntar los resultados. En la semántica
-`runtime choice' también se cumple si consideramos que todas las apariciones de un
+`run-time choice' también se cumple si consideramos que todas las apariciones de un
 identificador son  independientes (que es básicamente el comportamiento de esta semántica).
 
 La segunda optimización a realizar para mejorar el rendimiento es tener en cuenta en tiempo

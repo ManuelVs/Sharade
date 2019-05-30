@@ -8,11 +8,13 @@
 
 \begin{document}
 
-\section{Conclusiones}
+\section{Conclusiones y trabajo futuro}
 Hemos presentado e implementado un pequeño lenguaje funcional con características
-indeterministas y con combinación de las semánticas `call-time choice' y `runtime choice',
+indeterministas y con combinación de las semánticas `call-time choice' y `run-time choice',
 que era el núcleo del proyecto. La implementación de todas las fases se ha hecho en Haskell,
-un lenguaje puramente funcional de referencia en este paradigma en el mundo académico. La
+un lenguaje puramente funcional de referencia en este paradigma. La parte esencial de la
+implementación viene dada por un proceso de traducción a Haskell de un programa Sharade; es
+decir, lo que podemos considerar como un proceso de compilación a Haskell de Sharade. La
 traducción hace un uso intensivo de programación monádica para representar el indeterminismo
 y la compartición de expresiones, usando la primitiva \verb`share` de la biblioteca de
 Fischer. También creemos que la traducción es sencilla, ya que cada expresión en Sharade se
@@ -39,6 +41,136 @@ tipos!
 Por último, creemos que la combinación de semánticas en Sharade ha quedado con una sintaxis
 clara y consistente, pudiendo expresar algoritmos indeterministas con una riqueza semántica
 bastante importante, por lo que creemos que esta combinación o modelos similares puedan ser
-la base de futuros trabajos.
+la base de futuros trabajos sobre programación con funciones no deterministas.
+
+Aunque el trabajo aquí desarrollado satisface los objetivos propuestos, dista mucho de agotar
+todas las posibilidades del tema abordado. De hecho, hay mucho espacio para nuevos
+desarrollos. Tenemos claro que algunos aspectos admiten mejoras, de las cuales daremos pistas
+sobre cómo se pueden llevar a cabo e incorporar al trabajo existente, como examinamos a
+continuación.
+
+\begin{itemize}
+  \item[-] En cuanto a la sintaxis, se puede añadir mucho azúcar sintáctico para las listas,
+  listas intensionales, múltiples definiciones ecuacionales para sustituir las expresiones
+  \verb`case`, etc.
+
+  \item[-] Podría ser interesante dotar al lenguaje un sistema de módulos como en Haskell,
+  añadir funciones predefinidas y aumentar las características de las listas.
+
+  \item[-] Para mejorar el rendimiento se pueden poner en práctica las dos propuestas
+  realizadas, que como se ha mostrado en un ejemplo, puede mejorar el tiempo de ejecución en
+  un 50\%. La primera propuesta está parcialmente desarrollada en la rama \verb`optv1` del
+  repositorio.
+
+  \item[-] También se puede realizar la derivación automática de clases, con alguna de las
+  herramientas propuestas o actualizando la implementación de Fischer. Esto luego se tendría
+  que incorporar al proceso de traducción. Una vez hecho esto, podrían incorporarse clases de
+  tipos a Sharade, pudiendo unificar los operadores de suma, resta... de los tipos
+  \verb`Integer` y \verb`Double`, modificando así el sistema de inferencia de
+  tipos\cite{smith1994principal}.
+
+  \item[-] Se puede hacer más evidente la incorporación de nuevas formas de recolectar los
+  resultados. Actualmente está escondido y requiere un conocimiento básico del funcionamiento
+  de la biblioteca de Fischer para implementarlos.
+
+  \item[-] Es necesario añadir más funcionalidades al compilador. Actualmente no permite
+  nombrar el fichero de salida, no tiene opciones para crearlo como un módulo con nombre
+  propio y podría ser interesante incorporar a la traducción funciones auxiliares para no
+  tener que tratar directamente con el código traducido.
+\end{itemize}
+
+\subsection{Rendimiento}\label{sec:rendimiento}
+
+El rendimiento de Sharade es mejorable. El ejemplo de `permutation sort' de
+Fischer\cite{fischer2011purely} tarda 16 segundos en ordenar una lista de 20 elementos, un
+rendimiento muy parecido al que se obtiene en Curry con MCC\cite{lux2003munster}. Sin embargo
+Sharade tarda en ordenar la misma lista 43 segundos.
+
+Esto es debido al intensivo uso de la programación monádica. En la implementación de Fischer,
+las funciones que implementa son deterministas, en Sharade todas deben ser no deterministas.
+Esto produce una sobrecarga bastante importante de programación monádica, lo que lleva a una
+pérdida del rendimiento de cerca del 50\%. Fischer en su biblioteca también hace un uso
+intensivo de la programación monádica, pero es capaz de llevar a cabo muchas optimizaciones
+en el código para reducir este uso, tarea que no he realizado en mi implementación de la
+traducción.
+
+Aplicando a mano la primera optimización propuesta en el apartado de `Traducción a Haskell',
+el ejemplo de `permutationsort' observa una mejora de rendimiento muy notable, más del 50\%,
+tardando 18 segundos. La segunda optimización no se puede aplicar en este ejemplo ya que es
+intrínsecamente indeterminista.
+
+\begin{minted}[bgcolor=bg]{haskell}
+import Sharade.Prelude
+
+insert :: Sharing s => s a -> s (List s a) -> s (List s a)
+insert e ls = mPlus (cons e ls) (ls >>= (\pec -> case pec of
+  Cons x xs -> cons x (insert e xs)
+  _ -> mzero))
+
+perm :: Sharing s => s (List s a) -> s (List s a)
+perm ls = ls >>= (\pec -> case pec of
+  Nil -> nil
+  Cons x xs -> insert x (perm xs))
+
+isSorted :: Sharing s => s (List s Integer) -> s Bool
+isSorted ls = ls >>= (\pec -> case pec of
+  Nil -> true
+  Cons x xs -> xs >>= (\pec -> case pec of
+    Nil -> true
+    Cons y ys -> mAnd (mLeq x y) (isSorted cons y ys)))
+
+sort :: Sharing s => s (List s Integer) -> s (List s Integer)
+sort ls = share (perm ls) >>= (\sls -> (isSorted sls) >>= (\pec ->
+  case pec of
+    True -> sls
+    _ -> mzero))
+\end{minted}
+
+Como se explica en la traducción, cada aplicación funcional se debe hacer con el operador
+infijo \verb`<#>`, ya que la función esta escondida en una mónada y también el valor.
+Quitando toda esa sobrecarga y devolviendo a las funciones su aspecto habitual, queda un
+código bastante parecido al de Fischer. Como ya he dicho antes, tarda en ordenar una lista de
+20 elementos 18 segundos, una marca muy cercana a la que consigue Fischer en su
+implementación. Este resultado me resulta bastante satisfactorio, ya que es una optimización
+relativamente fácil de llevar a cabo en un futuro. De hecho, hay una implementación parcial
+de esta idea en la rama \verb`optv1` del repositorio de GitHub. Es parcial porque no realiza
+compartición de valores funcionales. Salvando eso, el resto de características del lenguaje
+funcionan correctamente, incluido el orden superior y, por supuesto, la compartición de tipos
+primitivos.
+
+\subsection{Recolección de resultados}
+
+La forma de recolectar los resultados parece ser bastante importante en el mundo de la
+programación indeterminista. Por ejemplo, el compilador KiCS2 de Curry ofrece varias formas
+de hacer la búsqueda en el espacio de resultados\cite{hanus2012search}.
+
+Mi lenguaje proporciona dos formas de recolectar los resultados, explicadas anteriormente,
+que son las implementaciones de Fischer. Pero también se da al usuario la posibilidad de
+implementar sus propias fórmulas de búsqueda, dando la posibilidad de descartar resultados
+para aumentar el rendimiento, como una búsqueda de ramificación y poda. También se pueden
+implementar búsquedas más simples. como una búsqueda en anchura, en profundidad iterativa o
+una búsqueda paralela multihilo. Por último quería destacar que no hay ningún motivo técnico
+en la implementación que pueda hacer que una búsqueda que no cumpla con las leyes de Fischer
+provoque un mal funcionamiento de la biblioteca y, por extensión, en mi implementación.
+
+Fischer tiene un trabajo\cite{fischer2009reinventing} sobre cómo modificar el sistema de
+backtracking en programación monádica en Haskell. En concreto, muestra cómo implementar la
+búsqueda en anchura y la búsqueda en profundidad por niveles, además de reinventar la
+búsqueda en profundidad que hace Haskell. Estas ideas se pueden usar para implementar tu
+propia mónada que realice la búsqueda deseada e incorporarla a Sharade.
+
+\subsection{Tipos de usuario}
+
+Sharade no soporta la definición de tipos arbitrarios. Esto es debido a que esos tipos serían
+indeterministas, por lo que tienen que estar sujetos a las reglas del Sharing de Fischer y
+pertenecer a una serie de clases de tipos. Fischer tiene implementado una derivación
+automática para tipos arbitrarios a sus clases de tipos, pero no funciona con las versiones
+actuales de Haskell. Actualmente se puede conseguir con múltiples herramientas como
+\verb`Template-Haskell`\cite{sheard2002template} o con
+\verb`DrIFT`\cite{DrIFT} o con \verb`derive`\cite{derive}. Esta última es la que usa Fischer
+para implementar la derivación automática de las clases de tipos. Abordar esta cuestión
+estaba fuera de los objetivos, debido a la necesidad de acotar el trabajo tanto en tiempo
+como en características. Por lo tanto, Sharade no soporta tipos de usuario, dejándolo como un
+trabajo futuro.
 
 \end{document}
