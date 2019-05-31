@@ -70,7 +70,7 @@ Suponiendo que existiera el tipo \verb`Expr`, este ejemplo es capaz de reconocer
 el árbol de expresión de secuencias como `a + b'. Las primitivas como \verb`identifier`,
 \verb`reservedOp` y \verb`reserved` permiten reconocer identificadores, operadores reservados
 y palabras reservadas tal como están descritas en el `analizador léxico'. También ofrece
-primitivas algo mas complejas como \verb`parens`, que dada una función que es capaz de
+primitivas algo más complejas como \verb`parens`, que dada una función que es capaz de
 reconocer algo del tipo \verb`a`, es capaz de reconocer lo mismo pero rodeado de paréntesis.
 
 Para permitir el backtracking en el análisis, por ejemplo de un lenguaje LL(0), existe la
@@ -79,7 +79,7 @@ analizador tiene éxito, no hace nada, pero en caso de que falle, actualiza el e
 y falla, para poder utilizar otro analizador.
 
 El lenguaje también ofrece primitivas para operadores binarios e infijos de distinta
-asociatividad. No hemos aprovechado estas primitivas en nusetra implementación debido a la
+asociatividad. No hemos aprovechado estas primitivas en nuestra implementación debido a la
 poca flexibilidad que ofrecían para generar expresiones.
 
 Gracias a la gran flexibilidad del tipo \verb`ParsecT` se pueden crear gran cantidad de

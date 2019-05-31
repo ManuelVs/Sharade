@@ -11,7 +11,7 @@
 \section{Conocimientos previos}\label{sec:con_prev}
 En este apartado explicaremos conceptos que son necesarios para un buen entendimiento de este
 trabajo, ya que hacemos uso de una programación monádica muy intensiva. Creemos que un
-programador aficionado no tiene por qué conocer los detalles ni tener soltura implementando
+programador poco experto no tiene por qué conocer los detalles ni tener soltura implementando
 instancias de las clases de tipos que veremos, por lo que intentaremos hacer una progresión
 de menor a mayor dificultad. Algún ejemplo puede resultar un reto entenderlo, sobre todo si
 nunca se ha tratado con este tipo de programación con anterioridad.
@@ -35,7 +35,7 @@ son como las interfaces de Java, pero en nuestra opinión las clases de tipos so
 potentes.
 
 \subsection{Familias de tipos, \textit{Kinds}}
-También es conveniente entender cómo funcionan los tipos en Haskell. Los tipos en Haskell
+Aparte de poder pertenecer a clases, los tipos en Haskell
 pertenecen a familias de tipos. La familia de \verb`Int` o de \verb`Double` o de \verb`[Int]`
 es \verb`*`. Un asterisco quiere decir que es un tipo concreto. Por ejemplo, la familia de
 \verb`[]`, las listas, es \verb`* -> *`, es decir, necesita un tipo concreto para dar otro
@@ -59,7 +59,7 @@ hasta donde llegan mis conocimientos de Haskell, no hay sistemas superiores de t
 esperen como argumentos familias de tipos.
 
 \subsection{Funtores}
-Los funtores, \verb`Functor` en inglés, es una clase de constructora de tipos de Haskell
+Los funtores, \verb`Functor` en inglés, es una clase de constructoras de tipos de Haskell
 definida de la siguiente forma:
 
 \begin{minted}[bgcolor=bg]{haskell}
@@ -160,7 +160,7 @@ deduce que \verb`f :: c -> a -> b`, \verb`f' :: c -> a`, por lo tanto el tipo de
 debe ser \verb`c -> b`, una función. Así, primero aplicamos \verb`f' c :: a`, después
 aplicamos \verb`((f c :: a -> b) (f' c :: a))`, que unido a la lambda expresión que engloba a
 todo, se obtiene el tipo \verb`c -> b`, como se quería. Visto así puede ser complicado,
-veamos un ejemplo no muy práctico con números, donde \verb`a, b, c :: Int`:
+veamos un ejemplo simplemente ilustrativo con números, donde \verb`a, b, c :: Int`:
 
 \verb`((+) <*> (\a -> a + 10)) 3` \\
 \verb`= (\c -> (c+) ((\a -> a + 10) c) 3` \\
@@ -186,7 +186,7 @@ class Applicative m => Monad (m :: * -> *) where
 
 Como antes, para ser una mónada es requisito indispensable ser un funtor aplicativo. Si antes
 había que implementar la función prima hermana de \verb`fmap`, ahora hay que implementar la
-primo-segunda, \verb`(>>=)`. Ahora la función recibe un valor metido en una caja y una
+prima segunda, \verb`(>>=)`. Ahora la función recibe un valor metido en una caja y una
 función que recibe un valor y devuelve otro metido en una caja. Devuelve esa caja intacta. La
 función \verb`return` es exactamente igual que \verb`pure`. Veamos algunas implementaciones:
 
@@ -235,13 +235,14 @@ ejemplo = emptyStack >>= push 1 >>= push 2 >>= pop >>= pop
 Ha aparecido una nueva función, \verb`fail`. Esta función recibe un String y devuelve un
 valor monádico. Con la mónada \verb`Maybe`, esta función simplemente devuelve \verb`Nothing`,
 pero otras mónadas más complejas podrían llevar la traza del error. Por ejemplo, en la
-biblioteca \verb`parsec` se sigue esta filosofía. Los errores y el estado en en análisis se
-llevan a cabo con una unión de mónadas (que forman una mónada), cada una ocupándose de su
-tarea. Lo ideal es adaptar el código para que use cualquier tipo de mónada, dando al usuario
-de tu biblioteca una gran flexibilidad y facilidad para usar tu código en cualquier parte. La
-biblioteca \verb`parsec` también permite esto, bajo ciertas condiciones, lo que permite que
-se desarrollen ciertas funcionalidades encima de ésta que pueden facilitar mucho el análisis.
-En concreto, se usan las \verb`MonadTransformer`, que permiten la composición de mónadas.
+biblioteca \verb`parsec`, que veremos en la sección \ref{sec:parsec}, se sigue esta
+filosofía. Los errores y el estado en en análisis se llevan a cabo con una unión de mónadas
+(que forman una mónada), cada una ocupándose de su tarea. Lo ideal es adaptar el código para
+que use cualquier tipo de mónada, dando al usuario de tu biblioteca una gran flexibilidad y
+facilidad para usar tu código en cualquier parte. La biblioteca \verb`parsec` también permite
+esto, bajo ciertas condiciones, lo que permite que se desarrollen ciertas funcionalidades
+encima de esta que pueden facilitar mucho el análisis. En concreto, se usan las
+\verb`MonadTransformer`, que permiten la composición de mónadas.
 
 Otro aspecto secundario (pues es mera sintaxis) pero importante en la programación monádica
 en Haskell es la introducción de la notación \verb`do`, que permite de forma elegante traer
@@ -296,8 +297,8 @@ instance MonadPlus Maybe where
 \end{minted}
 
 Usaremos estas operaciones para implementar algunas características de la programación no
-determinista, por ejemplo, la elección de dos valores. \verb`a?b` en Sharade se traducirá
-como \\ \verb`mplus (return a) (return b)`, el cómputo vacío, cuando no hay ningún resultado,
+determinista, por ejemplo, la elección de dos valores, \verb`a?b` en Sharade se traducirá
+como \verb`mplus (return a) (return b)`. El cómputo vacío, cuando no hay ningún resultado,
 se representará con \verb`mzero`. Esta situación se puede dar en una expresión \verb`case`
 cuando no se encaja en ningún patrón. Haskell en esos casos hace saltar una excepción. En la
 biblioteca explicit-sharing se extiende además la clase MonadPlus para permitir otra
@@ -307,7 +308,7 @@ que se usa para evaluar estos cómputos no deterministas.
 
 \subsection{Mónadas con estado}
 Podemos pensar las mónadas con estado como mónadas normales pero que además de un valor
-tienen un estado `oculto'. Veamos como se define la clase y su implementación para el tipo
+tienen un estado `oculto'. Veamos cómo se define la clase y su implementación para el tipo
 \verb`State`:
 
 \begin{minted}[bgcolor=bg]{haskell}
@@ -331,18 +332,19 @@ data State s a = State { runState :: s -> (a, s) }
 Como anotación, \verb`FlexibleInstances` y \verb`MultiParamTypeClasses` son dos extensiones
 del lenguaje de las muchas que hay en Haskell. \verb`FlexibleInstances` permite que las
 instancias de las clases no tengan que ser obligatoriamente un constructor de tipos y
-opcionalmente una lista de variables de tipos. Por ejemplo, la instancia \verb`Num (Maybe a)`
-está permitida pero no \verb`Num (Maybe Int)`, ya que \verb`Int` no es una variable de tipo.
-La segunda extensión permite que las clases de tipos reciban varios argumentos, como
-\verb`MonadState`. Así, gracias a estas dos extensiones se puede implementar la instancia
-\verb`MonadState s (State s)`. La primera permite que aparezca \verb`State s`, ya que sin
-ella la variable de tipos \verb`s` no puede volver a aparecer y la segunda permite que haya
-más de un argumento para la clase de tipos.
+opcionalmente una lista de variables de tipos. Por ejemplo, sin la anotación
+\verb`FlexibleInstances` la instancia \verb`Num (Maybe a)` está permitida pero no
+\verb`Num (Maybe Int)`, ya que \verb`Int` no es una variable de tipo; sin embargo, con la
+anotación esta segunda instancia está también permitida. La segunda extensión permite que las
+clases de tipos reciban varios argumentos, como \verb`MonadState`. Así, gracias a estas dos
+extensiones se puede implementar la instancia \verb`MonadState s (State s)`. La primera
+permite que aparezca \verb`State s`, ya que sin ella la variable de tipos \verb`s` no puede
+volver a aparecer y la segunda permite que haya más de un argumento para la clase de tipos.
 
 Esta es la definición de nuestro tipo. Nuestro tipo \verb`State` encierra un estado y un
 valor en una función. Esta función tiene como objetivo hacer las modificaciones necesarias al
 estado. Puede ser tan sencillo como dejar el estado intacto tal y como lo recibe. El valor
-tiene que ser dado desde fuera, igual que es dado desde fuera en Maybe, las listas...
+tiene que ser dado desde fuera, igual que es dado desde fuera en Maybe o las listas.
 
 \begin{minted}[bgcolor=bg]{haskell}
 instance Functor (State s) where

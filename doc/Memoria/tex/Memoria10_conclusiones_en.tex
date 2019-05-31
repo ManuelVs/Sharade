@@ -14,30 +14,31 @@ features and a combination of `call-time choice' and `run-time choice' semantics
 the core of the project. The implementation of all phases has been done in Haskell, a purely
 functional language of reference in this paradigm. The essential part of the implementation
 is given by a process of translation into Haskell of a Sharade program; that is, what we can
-consider as a process of compilation into Haskell of Sharade. Translation makes intensive use
-of monadic programming to represent indeterminism and the sharing of expressions, using the
-primitive verb`share` of the Fischer library. We also believe that translation is simple, as
-each expression in Sharade corresponds to an expression in Haskell, following a very basic
-recursive model and easy to understand.
+consider as a process of compilation of Sharade into Haskell. The Translation makes intensive
+use of monadic programming to represent indeterminism and the sharing of expressions, using
+the primitive \verb`share` of the Fischer's library. We also believe that the translation is
+simple, as each expression in Sharade corresponds to an expression in Haskell, following a
+very basic and easy to understand recursive model.
 
-Once again Haskell demonstrates his enormous potential and abstraction to describe in a clear
-and concise way very complicated and not trivial computations. Thanks to his strong type
-system it ensures great security about the result. You can even reason about the behavior of
-the program just by looking at the types of functions that are involved. This is a great
-advantage, but it is necessary to develop a certain fluency in order to be able to make such
-deductions. At first the programmer may encounter cryptic errors and therefore have the
-feeling that Haskell is a complicated language and does not help the programmer, but quite
-the opposite. Even errors are providing great information if you know how to interpret.
+Once again, Haskell demonstrates its enormous potential and abstraction to describe in a
+clear and concise way very complicated and not trivial computations. Thanks to its strong
+type system it ensures great security about the result. You can even reason about the
+behavior of the program just by looking at the types of functions that are involved. This is
+a great advantage, but it is necessary to develop a certain fluency in order to be able to
+make such deductions. At first the programmer may encounter cryptic errors and therefore have
+the feeling that Haskell is a complicated language and does not help the programmer, but
+quite the opposite. Even errors are providing great information if you know how to interpret
+them.
 
-It also needs to be mentioned that any unexplored Haskell feature for a programmer can be
-something completely new, strange and without any solid concept on which to build to
-understand the new aspect. This makes me consider that, being one of my favorite languages,
-it is by far the most complicated language, even more so than the new C++ revisions. Haskell
-is such a well-defined language that even types have types!
+We want also mention that any unexplored Haskell feature for a programmer can be
+something completely new, strange and without any solid concept on which to build the
+understanding of the new aspect. This makes me consider that, being one of my favorite
+languages, it is by far the most complicated language I Know, even more so than the new
+C++ revisions. Haskell is such a well-defined language that even types have types!
 
-Finally, we believe that the combination of semantics in Sharade has remained with a clear
+Finally, we believe that the combination of semantics in Sharade is expressed with a clear
 and consistent syntax, being able to express indeterministic algorithms with a quite
-important semantic richness, reason why we believe that this combination or similar models
+important semantic richness; thus we believe that this combination or similar models
 can be the base of future works about programming with nondeterministic functions.
 
 Although the work developed here satisfies the proposed objectives, it is far from exhausting
@@ -51,21 +52,22 @@ discussed below.
   multiple equational definitions to replace the expressions \verb`case`, etc.
 
   \item[-] It might be interesting to provide the language with a system of modules such as
-  Haskell, to add predefined functions and increase the characteristics of the lists.
+  Haskell's one, to add predefined functions and to increase the characteristics of the
+  lists.
 
   \item[-] In order to improve performance, the two proposals made can be put into practice,
   which, as shown in an example, can improve execution time by 50\%. The first proposal is
   partially developed in the branch \verb`optv1` of the repository.
 
   \item[-] It is also possible to automatically derive classes with one of the proposed tools
-  or by updating the Fischer implementation. This would then have to be incorporated into the
+  or by updating Fischer's implementation. This would then have to be incorporated into the
   translation process. Once this is done, type classes could be incorporated to Sharade,
   being able to unify the operators of addition, subtraction... of the types \verb`Integer`
   and \verb`Double`.
 
   \item[-] It can be made more evident the incorporation of new ways of collecting the
-  results. It is currently hidden and requires a basic knowledge of how the Fischer library
-  works to implement them.
+  results of a nondeterministic computation. It is currently hidden and requires a basic
+  knowledge of how the Fischer library works to implement them.
 
   \item[-] More functionality needs to be added to the compiler. Currently it does not allow
   naming the output file, it does not have options to create it as a module with its own name
@@ -90,7 +92,7 @@ performance.
 Applying by hand the first optimization proposed in the section of `Translation to Haskell',
 this example observes a performance gain of about 50\%. It takes 18 seconds to sort a list of
 20 elements. The second optimization proposed is not applicable in this example because is
-indtrinsically nondeterministic.
+intrinsically nondeterministic.
 
 \begin{minted}[bgcolor=bg]{haskell}
 import Sharade.Prelude
@@ -119,29 +121,30 @@ sort ls = share (perm ls) >>= (\sls -> (isSorted sls) >>= (\pec ->
     _ -> mzero))
 \end{minted}
 
-Previously explained, each funcional application must be done with the infix operator
-\verb`<#>`, because the function and the value are inside a monad. If we delete this overhead
-and returning to the normal aspect of functions in Haskell, we obtain code similar to
-Fischer's implementation. As we said before, it takes to sort a list of 20 elements nearly
+As it was previously explained, each funcional application must be done with the infix
+operator \verb`<#>`, because the function and the value are inside a monad. If we delete this
+overhead and return to the normal aspect of functions in Haskell, we obtain code similar to
+Fischer's implementation. As we said before, sorting a list of 20 elements takes
 18 seconds, very close to Fischer's implementation. This result is very satisfying since it
 is a relatively easy optimization to carry out in the future. In fact, there is a partial
-implementation in \verb`optv1` branch on the GitHub repository. It's partial because it lacks
-the functionality to share functions, since it requires a deep modification of the
+implementation in \verb`optv1` branch on the GitHub repository. It is partial because it
+lacks the functionality to share functions, since it requires a deep modification of the
 translation function. The remaining features such as high order, lazyness, sharing of
-primitive types and indeterminism are working as expected.
+primitive types and indeterminism work properly as expected.
 
-\subsection{Observing results}
+\subsection{Collecting results}
 
-Sharade provides two forms of observing results, explained before. Sharade gives the user
-the posibility of implementing its own ways os observing the results. These implementations
-can be very complex like a `Branch and bound' algorithm or simpler like a `breadth first
-search' or a `Iterative deepening depth-first search' or even a multithread search.
+Sharade provides two forms of collecting results, that were explained before. Sharade gives
+the user the posibility of implementing its own ways of observing the results. These
+implementations can be very complex like a `Branch and bound' algorithm or simpler like a
+`breadth first search' or a `Iterative deepening depth-first search' or even a multithread
+search.
 
 Fischer has a very interesting research \cite{fischer2009reinventing} on how to modify the
-backtacking system in monadic programming in Haskell. Specifically, he shows how to implement
-a `breadth first search' or a `Iterative deepening depth-first search' in Haskell. He also
-reinvents the `depth-first search' of Haskell. These ideas can be used to implement your own
-monad that perform the desired search and incorporate it into Sharade.
+backtracking system in monadic programming in Haskell. Specifically, he shows how to
+implement a `breadth first search' or a `Iterative deepening depth-first search' in Haskell.
+He also reinvents the `depth-first search' of Haskell. These ideas can be used to implement
+your own monad that perform the desired search and incorporate it into Sharade.
 
 The way of collecting the results seems to be quite important in the world of indeterministic
 programming. For example, Curry's KiCS2 compiler offers several ways to explore the search
@@ -152,12 +155,11 @@ space \cite{hanus2012search}.
 Sharade does not support the definition of arbitrary types. This is because those types would
 be indeterministic, so they have to be subject to Fischer's Sharing rules and belong to a
 series of type classes. Fischer has implemented an automatic derivation for arbitrary types
-to its type classes, but it does not work with the current versions of Haskell. Currently, it
-can be done with multiple tools such as
-\verb`Template-Haskell` \cite{sheard2002template} or with
-\verb`DrIFT` \cite{DrIFT} or with \verb`derive` \cite{derive}. The latter is the one used by
-Fischer to implement automatic derivation of type classes. Addressing this issue was outside
-the objectives, due to the need to limit the work in both time and features. Therefore,
-Sharade does not support user types, leaving it as a future job.
+to his own type classes, but it does not work with the current versions of Haskell.
+Currently, it can be done with multiple tools such as \verb`Template-Haskell`
+\cite{sheard2002template}, \verb`DrIFT` \cite{DrIFT} or \verb`derive` \cite{derive}. The
+latter is the one used by Fischer to implement automatic derivation of type classes.
+Addressing this issue was outside our objectives, due to the need to limit the work in both
+time and features. Therefore, Sharade does not support user types, leaving it as future work.
 
 \end{document}

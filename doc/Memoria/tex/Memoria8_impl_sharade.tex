@@ -37,31 +37,43 @@ ya de base directa a la construcción de un analizador sintáctico, que describi
 sección \ref{sec:analizador_sintactico}.
 
 \begin{itemize}
-  \item[Program] $\rightarrow$ \verb`{ FunDecl }`
-  \item[FunDecl] $\rightarrow$ \verb`Identifier { Identifier } "=" Expression ";"`
-  \item[Expression] $\rightarrow$ \verb`E0`
-  \item[E0] $\rightarrow$ \verb`E1 "?" E0`
-  \item[E0] $\rightarrow$ \verb`E1`
-  \item[E1] $\rightarrow$ \verb`E2 "&&" E1 | E2 "||" E1`
-  \item[E1] $\rightarrow$ \verb`E2`
-  \item[E2] $\rightarrow$ \verb`E3 RelOperator E2`
-  \item[E2] $\rightarrow$ \verb`E3`
-  \item[E3] $\rightarrow$ \verb`E4 "+" E3 | E4 "-" E3`
-  \item[E3] $\rightarrow$ \verb`E4`
-  \item[E4] $\rightarrow$ \verb`E5 "*" E4 | E5 "/" E4`
-  \item[E4] $\rightarrow$ \verb`E5`
-  \item[E5] $\rightarrow$ \verb`Lambda | ChooseIn | LetIn | CaseExpr` \\
-                          \verb`| FExp | Pair | "(" E0 ")"`
-  \item[FExp] $\rightarrow$ \verb`Identifier { AExp }`
-  \item[AExp] $\rightarrow$ \verb`LitExpr | Variable | "(" E0 ")"`
-  \item[Lambda] $\rightarrow$ \verb`"\" Identifier "->" Expression`
-  \item[ChooseIn] $\rightarrow$ \verb`"choose" Identifier "=" Expression "in" Expression`
-  \item[LetIn] $\rightarrow$ \verb`"let" Identifier "=" Expression "in" Expression`
-  \item[Pair] $\rightarrow$ \verb`"(" Expression "," Expression ")"`
-  \item[CaseExpr] $\rightarrow$ \verb`"case" Expression "of" { CaseMatch }`
-  \item[CaseMatch] $\rightarrow$ \verb`Pattern "->" Expression ";"`
-  \item[Pattern] $\rightarrow$ \verb`Constructor { Identifier }`
-  \item[Constructor] $\rightarrow$ \verb`UpperCase { AlphaNum }`
+  \item[-]{\makebox[2cm]{$Program$\hfill}} $\rightarrow$ \verb`{ FunDecl }`
+  \item[-]{\makebox[2cm]{$FunDecl$\hfill}} $\rightarrow$
+  \verb`Identifier { Identifier } "=" Expression ";"`
+  
+  \item[-]{\makebox[2cm]{$Expression$\hfill}} $\rightarrow$ \verb`E0`
+  \item[-]{\makebox[2cm]{$E0$\hfill}} $\rightarrow$ \verb`E1 "?" E0`
+  \item[-]{\makebox[2cm]{$E0$\hfill}} $\rightarrow$ \verb`E1`
+  \item[-]{\makebox[2cm]{$E1$\hfill}} $\rightarrow$ \verb`E2 "&&" E1 | E2 "||" E1`
+  \item[-]{\makebox[2cm]{$E1$\hfill}} $\rightarrow$ \verb`E2`
+  \item[-]{\makebox[2cm]{$E2$\hfill}} $\rightarrow$ \verb`E3 RelOperator E2`
+  \item[-]{\makebox[2cm]{$E2$\hfill}} $\rightarrow$ \verb`E3`
+  \item[-]{\makebox[2cm]{$E3$\hfill}} $\rightarrow$ \verb`E4 "+" E3 | E4 "-" E3`
+  \item[-]{\makebox[2cm]{$E3$\hfill}} $\rightarrow$ \verb`E4`
+  \item[-]{\makebox[2cm]{$E4$\hfill}} $\rightarrow$ \verb`E5 "*" E4 | E5 "/" E4`
+  \item[-]{\makebox[2cm]{$E4$\hfill}} $\rightarrow$ \verb`E5`
+  \item[-]{\makebox[2cm]{$E5$\hfill}} $\rightarrow$
+  \verb`Lambda | ChooseIn | LetIn | CaseExpr |` \\
+  \verb`FExp | Pair | "(" E0 ")"`
+
+  \item[-]{\makebox[2cm]{$FExp$\hfill}} $\rightarrow$ \verb`Identifier { AExp }`
+  \item[-]{\makebox[2cm]{$AExp$\hfill}} $\rightarrow$ \verb`LitExpr | Variable | "(" E0 ")"`
+  \item[-]{\makebox[2cm]{$Lambda$\hfill}} $\rightarrow$ \verb`"\" Identifier "->" Expression`
+  \item[-]{\makebox[2cm]{$ChooseIn$\hfill}} $\rightarrow$
+  \verb`"choose" Identifier "=" Expression "in" Expression`
+  
+  \item[-]{\makebox[2cm]{$LetIn$\hfill}} $\rightarrow$
+  \verb`"let" Identifier "=" Expression "in" Expression`
+  
+  \item[-]{\makebox[2cm]{$Pair$\hfill}} $\rightarrow$
+  \verb`"(" Expression "," Expression ")"`
+  
+  \item[-]{\makebox[2cm]{$CaseExpr$\hfill}} $\rightarrow$
+  \verb`"case" Expression "of" { CaseMatch }`
+  
+  \item[-]{\makebox[2cm]{$CaseMatch$\hfill}} $\rightarrow$ \verb`Pattern "->" Expression ";"`
+  \item[-]{\makebox[2cm]{$Pattern$\hfill}} $\rightarrow$ \verb`Constructor { Identifier }`
+  \item[-]{\makebox[2cm]{$Constructor$\hfill}} $\rightarrow$ \verb`UpperCase { AlphaNum }`
 \end{itemize}
 
 Un identificador válido es cualquier cadena de caracteres alfanumérica que empiece por un
@@ -73,15 +85,14 @@ La sintaxis está claramente influenciada por Haskell y Curry. En la sintaxis se
 también las primitivas necesarias para expresar el no determinismo con compartición y sin
 compartición. El operador \verb`?` expresa la elección de dos valores no deterministas y la
 estructura \verb`choose ... in ...` expresa una nueva ligadura de una expresión a un
-identificador que compartirá el valor en todas sus apariciones, cumpliendo la propiedad que
-Francisco J. Fraguas muestra en `A simple rewrite notion for call-time choice semantics'
-\cite{lopez2007simple}.
+identificador que compartirá el valor en todas sus apariciones, siendo pues la forma de
+expresar en Sharade la semántica de `call-time choice'.
 
 \subsection{Analizador sintáctico con parsec}\label{sec:analizador_sintactico}
 
 Como ya hemos visto, la biblioteca \verb`parsec` permite especificar una gramática
 L-atribuida aprovechando todas las características de Haskell. Un inconveniente que tiene es
-que en análisis es descendente, por lo que a la hora de la implementación hay que transformar
+que el análisis es descendente, por lo que a la hora de la implementación hay que transformar
 la gramática para evitar la recursión a izquierdas. En nuestra implementación no hemos hecho
 un cálculo de los directores, por lo que el análisis se basa en un backtracking LL0.
 
@@ -112,8 +123,8 @@ expr'' 0 = do
 \end{minted}
 
 Esta parte del código corresponde al análisis de las expresiones con un operador infijo de
-prioridad cero, que es la máxima prioridad. En este caso es solo corresponde al operador
-\verb`(?)`, origen del indeterminismo de Sharade.
+prioridad cero, que es la máxima prioridad. En este caso es solo lo que corresponde al
+operador \verb`(?)`, origen del indeterminismo de Sharade.
 
 Como se puede ver, las definiciones auxiliares en vez de obtener un valor heredado con la
 expresión, como se haría en un analizador descendente tradicional, devuelven una función que
@@ -126,16 +137,16 @@ esta parte se puede encontrar en el módulo \verb`Sharade.Parser`.
 
 \subsection{Análisis de tipos}
 
-Como se ha indicado varias veces, la implementación de Sharade procede por traducción a un
-programa Haskell cuya ejecución recoge la funcionalidad esperada del programa original. La
-traducción utiliza intensivamente la programación monádica, como se ha explicado en el
-apartado \ref{sec:uso_directo}. El programa traducido, al ser Haskell, debe estar bien
-tipado. En un primer momento se podría pensar en delegar en Haskell el análisis de tipos,
-reportando su propio interpretador un error de tipos si fuese necesario. Pero debido a la
-naturaleza de la traducción (al uso intensivo de la programación monádica), se incurre
-fácilmente en ambigüedades de tipos, por lo que Haskell rechaza el programa con un caso
-particular de error de tipos. Para evitar esta situación, es necesario realizar un análisis
-de tipos sobre el programa en Sharade, con el clásico sistema de
+Como se ha indicado varias veces, la implementación de Sharade procede por traducción de un
+programa Sharade original a un programa Haskell cuya ejecución recoge la funcionalidad
+esperada del programa original. La traducción utiliza intensivamente la programación
+monádica, como se ha explicado en el apartado \ref{sec:uso_directo}. El programa traducido,
+al ser Haskell, debe estar bien tipado. En un primer momento se podría pensar en delegar en
+Haskell el análisis de tipos, reportando su propio interpretador un error de tipos si fuese
+necesario. Pero debido a la naturaleza de la traducción (al uso intensivo de la programación
+monádica), se incurre fácilmente en ambigüedades de tipos, por lo que Haskell rechaza el
+programa con un caso particular de error de tipos. Para evitar esta situación, es necesario
+realizar un análisis de tipos sobre el programa en Sharade, con el clásico sistema de
 Hindley-Milner \cite{hindley1969principal}. En el apartado en el que se explica la traducción
 a Haskell indicaré cómo se transforman estos tipos inferidos a Haskell.
 
@@ -283,14 +294,15 @@ sustitución infinita. Esta parte de la implementación se puede encontrar en el
 
 \subsection{Traducción a Haskell}\label{sec:traduccion}
 
-La última etapa de la compilación es la generación de código Haskell. Para explicar la
-traducción nos basaremos en la sintaxis abstracta presentada en \ref{sec:sintaxis_abstracta}.
-En la traducción de cualquier expresión se cumple un invariante, las subexpresiones generadas
-son expresiones Haskell monádicas, por lo tanto nuestra función de traducción siempre debe
-generar una expresión monádica. Esto es necesario para tener presente en todo momento el
-indeterminismo. De esta manera, las expresiones funcionales pasan a estar dentro de mónadas,
-por lo que para traducir la aplicación de una función es necesario definir un operador
-auxiliar que se encargue de aplicar la función monádica a un valor monádico:
+La última etapa de la compilación y la más relevante para este trabajo es la generación de
+código Haskell. Para explicar la traducción nos basaremos en la sintaxis abstracta presentada
+en \ref{sec:sintaxis_abstracta}. En la traducción de cualquier expresión se cumple un
+invariante, las subexpresiones generadas son expresiones Haskell monádicas, por lo tanto
+nuestra función de traducción siempre debe generar una expresión monádica. Esto es necesario
+para tener presente en todo momento el indeterminismo. De esta manera, las expresiones
+funcionales pasan a estar dentro de mónadas, por lo que para traducir la aplicación de una
+función es necesario definir un operador auxiliar que se encargue de aplicar la función
+monádica a un valor monádico:
 
 \begin{minted}[bgcolor=bg]{haskell}
 infixl 4 <#>
@@ -420,5 +432,50 @@ máxima velocidad y las piezas no deterministas casi inevitablemente más lentas
 Estas tareas no se han llevado a cabo por la necesidad de acotar el desarrollo del lenguaje,
 ya que no se persigue la eficiencia sino mostrar una posible solución simple a la combinación
 de dos tipos de semántica y mostrar las ventajas que esto puede llegar a ofrecer.
+
+\subsection{Un ejemplo}
+Para mostrar un ejemplo de la traducción donde aparezca la semántica de `call-time choice',
+hemos propuesto un sencillo programa \verb`Sharade`, que aparece también en la sección
+\ref{sec:vistazo_sharade}.
+
+Se trata del primer ejemplo donde se ve la compartición de variables. Supongamos que tenemos
+un fichero `share.sa' con el siguiente contenido:
+
+\begin{minted}[bgcolor=bg]{haskell}
+number = 1 ? 2 ? 3 ? 4 ;
+
+duplicate x = choose a = x in a + a ;
+\end{minted}
+Si ejecutamos nuestro compilador de la siguiente manera:
+\begin{minted}[bgcolor=bg]{bash}
+$ Sharade share.sa
+\end{minted}
+Se generará un fichero llamado `share.sa.hs', con el siguiente contenido:
+\begin{minted}[bgcolor=bg]{haskell}
+import Sharade.Prelude
+
+number :: (Sharing s) => s Integer
+number = mPlus <#> (return 1) <#> (mPlus <#> (return 2)
+               <#> (mPlus <#> (return 3) <#> (return 4)))
+
+duplicate :: (Sharing s) => s Integer
+duplicate = share (number) >>= (\n -> mAdd <#> (n) <#> (n))
+\end{minted}
+
+En la traducción de \verb`number` se pueden observar las reglas de traducción de unos
+literales (el 1, el 2...), una variable (el operador \verb`?` como \verb`mPlus`) y la
+aplicación funcional, con el operador infijo \verb`<#>`. Como el operador \verb`?` asocia a
+derechas, se puede ver cómo van apareciendo más paréntesis por la parte derecha de la
+expresión.
+
+En la traducción de \verb`duplicate` se puede obesrvar la regla de traducción del
+\verb`choose`. Se hace una llamada a la primitiva \verb`share`, implementada por Fischer en
+su biblioteca, seguida del operador monádico \verb`>>=`, que recordemos que saca un valor
+de una mónada para aplicarle una función, seguida de la expresión lambda. Como la función
+\verb`share` introduce un valor monádico dentro de otra mónada, es casi obligado el uso
+inmediato de este operador. Dentro de la expresión lambda sigue la traducción del programa,
+traduciendo el operador \verb`+` como \verb`mAdd` y haciendo la aplicación funcional con
+\verb`<#>`. El resultado de esta expresión lambda es devuelto directamente por el operador
+\verb`>>=`, es decir, se mantiene el invariante en toda la traducción.
 
 \end{document}

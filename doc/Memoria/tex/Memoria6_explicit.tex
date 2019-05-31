@@ -16,17 +16,17 @@ Recordemos que la semántica por defecto es la ya comentada `run-time choice'. S
 simular el comportamiento de la semántica `calltime choice' si se extrajesen los valores de
 las mónadas para luego operar con ellos, pero esto plantea un inconveniente bastante
 importante, se pierde la evaluación perezosa, ya que al extraer el valor de la mónada estamos
-forzando su evaluación. Fischer en su trabajo propone una solución a este problema, que
-comentaremos en el siguiente apartado. En el apartado \ref{sec:uso_directo} veremos algunos
-ejemplos del uso de su biblioteca, donde finalmente quedará clara la necesidad de crear un
-lenguaje para mostrar la combinación de semánticas.
+forzando su evaluación. Fischer en su trabajo \cite{fischer2011purely} propone una solución a
+este problema, que comentaremos en el siguiente apartado. En el apartado
+\ref{sec:uso_directo} veremos algunos ejemplos del uso de su biblioteca, donde finalmente
+quedará clara la necesidad de crear un lenguaje para mostrar la combinación de semánticas.
 
 \subsection{Biblioteca explicit-sharing}\label{sec:explicit_sharing}
 Aunque el paradigma del no determinismo ya está completo en Haskell con las herramientas que
 hemos explicado más arriba, en concreto con cualquier tipo que pertenezca a la clase
 \verb`MonadPlus`, perdemos ciertas características, como la evaluación perezosa. Sin esta
 característica, no podríamos trabajar con estructuras de datos infinitas o desechar cómputos
-que que no nos interesen. Vamos a ver una serie de ejemplos para ilustrar esta pérdida de
+que no nos interesen. Vamos a ver una serie de ejemplos para ilustrar esta pérdida de
 características \cite{fischer2011purely}:
 
 \begin{minted}[bgcolor=bg]{haskell}
@@ -52,7 +52,7 @@ lazy_share x = do
   duplicate (const' (return 2) v)
 \end{minted}
 
-Si pasamos un valor infinito o que se tarde mucho en calcular o directamente, provoque un
+Si pasamos un valor infinito o que se tarde mucho en calcular o, directamente, provoque un
 error de cómputo a \verb`strict_bind`, no se comportará correctamente, incluso cuando no se
 está usando para nada el argumento. Esto es debido a la implementación del operador
 \verb`>>=`, para cualquier tipo de mónada en la que se evalúe la función. En otras palabras,
@@ -108,7 +108,7 @@ $\llbracket duplicate \: (0 \: ? \: 1)\rrbracket = \{0, 2\}$ \\
 $\llbracket duplicate \:0\rrbracket\:\bigcup\:\llbracket duplicate \: 1\rrbracket
 =\{0\} \:\bigcup\: \{2\}$ \\
 $\llbracket duplicate \:0 \:?\: duplicate \:1\rrbracket = \{0\} \:\bigcup\: \{2\}$ \\
-Esta propiedad la describe F. J. López Fraguas en \cite{lopez2007simple}.
+Esta propiedad se describe en \cite{lopez2007simple}.
 
 Las leyes Fail, Choice e Ignore hacen que se cumplan ciertos comportamientos en las
 implementaciones que aseguran la evaluación perezosa y la compartición de nodos en una
@@ -116,8 +116,8 @@ expresión:
 
 \begin{itemize}
   \item[-] Elección temprana $\rightarrow$ La elección de un valor se tiene que hacer como si
-  se ejecutara de manera impaciente. Pero no se puede ejecutar impacientemente, por el
-  ejemplo anterior, perderíamos la evaluación perezosa.
+  se ejecutara de manera impaciente. Pero no se puede ejecutar impacientemente, pues como
+  hemos visto en el ejemplo anterior, perderíamos la evaluación perezosa.
   \item[-] Demanda tardía $\rightarrow$ Se puede hacer una elección sin necesidad de efectuar
   el cómputo. Es decir, se elegirá el cómputo que hay que hacer pero no se efectuará hasta
   que sea realmente necesario, consiguiendo de nuevo la evaluación perezosa.
@@ -126,7 +126,7 @@ expresión:
 
 \subsubsection{Simples pero malas implementaciones}
 Para entender mejor estas leyes e intuiciones, vamos a ver dos formas incorrectas de
-implementar \verb`share` y ver por qué no serían aptas.
+implementar \verb`share` y explicar por qué no serían aptas.
 
 \begin{minted}[bgcolor=bg]{haskell}  
 import Control.Monad
@@ -159,7 +159,7 @@ share a = return a
 
 Esta implementación cumple las leyes `Fail' e `Ignore', pero no cumple la ley `Choice'. El
 resultado de \verb`dup_coin_share` debería ser \{(0,0), (1,1)\}, pero tiene las cuatro
-combinaciones. Esto es debido a que esta implementación comparte sólo el cómputo no
+combinaciones. Esto es debido a que esta implementación comparte solo el cómputo no
 determinista, no los valores que genera. Así, en este caso \verb`dup_coin_share` es
 equivalente a \verb`dup_coin_let`, le pasa el mismo cómputo no determinista.
 
@@ -343,7 +343,7 @@ En esta implementación, \verb`Store` es como la lista de \verb`Thunk`, guarda l
 en un mapa y proporciona la claves para recordar la decisión. Fischer implementa funciones
 auxiliares para actualizar y observar esta estructura, como inserciones, eliminaciones,
 consultas... \verb`Lazy` es la mónada sobre la que se realizarán todas las operaciones.
-Veamos la implementación del share:
+Veamos la implementación de \verb`share`:
 
 \begin{minted}[bgcolor=bg]{haskell}
 class Shareable m a where
@@ -382,7 +382,7 @@ compartir. Si es la primera vez que se evalúa, se encontrará al consultar el e
 que no está, generando los resultados e insertándolos. Si ya ha sido generado, tan solo hay
 que devolverlo.
 
-\subsection{Codificación directa}\label{sec:uso_directo}
+\subsection{Codificación directa de combinación de semánticas}\label{sec:uso_directo}
 Veamos unos ejemplos de cómo usar la biblioteca de Fischer para mostrar cómo se pueden
 mezclar los dos tipos de semántica en Haskell sin perder evaluación perezosa:
 
