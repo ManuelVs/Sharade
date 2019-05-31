@@ -60,7 +60,6 @@ perdemos la evaluación perezosa. Sin embargo, como veremos más adelante, esto 
 la otra función, \verb`lazy_share`. Con esa conseguimos la evaluación perezosa y sin perder
 la importante característica de que todas las apariciones de \verb`v` correspondan con el
 mismo valor.
-\newpage
 
 \subsubsection{Leyes de share}
 La implementación del \verb`share` tiene que cumplir una serie de leyes para garantizar unas
@@ -122,7 +121,6 @@ expresión:
   el cómputo. Es decir, se elegirá el cómputo que hay que hacer pero no se efectuará hasta
   que sea realmente necesario, consiguiendo de nuevo la evaluación perezosa.
 \end{itemize}
-\newpage
 
 \subsubsection{Simples pero malas implementaciones}
 Para entender mejor estas leyes e intuiciones, vamos a ver dos formas incorrectas de
