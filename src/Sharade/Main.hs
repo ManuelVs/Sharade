@@ -25,10 +25,7 @@ main = do
       Left l -> print l
       Right haskellProgram -> do
         fw <- openFile wpath WriteMode
-
-        hPutStrLn fw "import Sharade.Prelude"
         hPutStr fw haskellProgram
-
         hClose fw
 
   hClose fr
