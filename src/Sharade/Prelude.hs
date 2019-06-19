@@ -1,9 +1,11 @@
-{-# LANGUAGE MultiParamTypeClasses, FlexibleInstances #-}
+{-# LANGUAGE
+  MultiParamTypeClasses,
+  FlexibleInstances
+#-}
 
 module Sharade.Prelude (
   Sharing(..), Shareable(..), Convertible(..), results, unsafeResults,
   mzero, mPlus,
-  (<#>),
   mAdd, mSub, mMul, mDiv,
   mLt, mLeq, mGt, mGeq, mEq, mNeq,
   List(..), nil, cons, isEmpty, first, rest,
@@ -14,37 +16,39 @@ module Sharade.Prelude (
 
   import Control.Monad
   import Control.Monad.Sharing
-  
+
   import Sharade.List
   import Sharade.Pair
 
-  mPlus :: (Sharing s) => s (s a -> s (s a -> s a))
-  mPlus = return (\a -> return (\b -> mplus a b))
+  class Choiceable a where
+    mPlus :: a -> a -> a
+  
+  instance {-# INCOHERENT #-} (Sharing s) => Choiceable (s a) where
+    mPlus = mplus
+  
+  instance (Choiceable b) => Choiceable (a -> b) where
+    f `mPlus` f' = (\x -> f x `mPlus` f' x)
+  
+  mAdd, mSub, mMul :: (MonadPlus s, Num a) => s a -> s a -> s a
+  mAdd a b = a >>= (\a' -> b >>= (\b' -> return $ a' + b'))
+  mSub a b = a >>= (\a' -> b >>= (\b' -> return $ a' - b'))
+  mMul a b = a >>= (\a' -> b >>= (\b' -> return $ a' * b'))
 
-  infixl 4 <#>
-  (<#>) :: (Sharing s) => s (s a -> s b) -> (s a) -> (s b)
-  f <#> a = f >>= (\f' -> f' a)
+  mDiv :: (MonadPlus s, Fractional a) => s a -> s a -> s a
+  mDiv a b = a >>= (\a' -> b >>= (\b' -> return $ a' / b'))
 
-  mAdd, mSub, mMul :: (Sharing s, Num a) => s (s a -> s (s a -> s a))
-  mAdd = return (\a -> return (\b -> (return (+)) <*> a <*> b))
-  mSub = return (\a -> return (\b -> (return (-)) <*> a <*> b))
-  mMul = return (\a -> return (\b -> (return (*)) <*> a <*> b))
-
-  mDiv :: (Sharing s, Fractional a) => s (s a -> s (s a -> s a))
-  mDiv = return (\a -> return (\b -> (return (/)) <*> a <*> b))
-
-  mLt, mLeq, mGt, mGeq, mEq, mNeq :: (Sharing s, Ord a) => s (s a -> s (s a -> s Bool))
-  mLt  = return (\a -> return (\b -> return (<) <*> a <*> b))
-  mLeq  = return (\a -> return (\b -> return (<=) <*> a <*> b))
-  mGt  = return (\a -> return (\b -> return (>) <*> a <*> b))
-  mGeq  = return (\a -> return (\b -> return (>=) <*> a <*> b))
-  mEq  = return (\a -> return (\b -> return (==) <*> a <*> b))
-  mNeq  = return (\a -> return (\b -> return (/=) <*> a <*> b))
+  mLt, mLeq, mGt, mGeq, mEq, mNeq :: (Sharing s, Ord a) => s a -> s a -> s Bool
+  mLt  a b = a >>= (\a' -> b >>= (\b' -> return $ a' < b'))
+  mLeq a b = a >>= (\a' -> b >>= (\b' -> return $ a' <= b'))
+  mGt  a b = a >>= (\a' -> b >>= (\b' -> return $ a' > b'))
+  mGeq a b = a >>= (\a' -> b >>= (\b' -> return $ a' >= b'))
+  mEq  a b = a >>= (\a' -> b >>= (\b' -> return $ a' == b'))
+  mNeq a b = a >>= (\a' -> b >>= (\b' -> return $ a' /= b'))
 
   true, false :: (Sharing s) => s Bool
-  true = return True
+  true  = return True
   false = return False
 
-  mAnd, mOr :: (Sharing s) => s (s Bool -> s (s Bool -> s Bool))
-  mAnd = return (\a -> return (\b -> a >>= (\a' -> if a' then b else false)))
-  mOr = return (\a -> return (\b -> a >>= (\a' -> if not a' then b else true)))
+  mAnd, mOr :: (Sharing s) => s Bool -> s Bool -> s Bool
+  mAnd a b = a >>= (\a' -> if a' then b else false)
+  mOr  a b = a >>= (\a' -> if a' then true else b)

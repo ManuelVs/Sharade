@@ -17,30 +17,30 @@ module Sharade.List (
   nil = return Nil
 
   -- | Constructs a non-empty monadic list.
-  cons :: Sharing s => s (s a -> s (s (List s a) -> s (List s a)))
-  cons = return (\x -> return (\xs -> return (Cons x xs)))
+  cons :: Sharing s => s a -> s (List s a) -> s (List s a)
+  cons x xs = return $ Cons x xs
 
   -- | Checks if monadic list is empty.
-  isEmpty :: Sharing s => s (s (List s a) -> s Bool)
-  isEmpty = return (\ml -> ml >>= (\l -> case l of
+  isEmpty :: Sharing s => s (List s a) -> s Bool
+  isEmpty xs = xs >>= (\xs -> case xs of
     Nil      -> return True
-    Cons _ _ -> return False ))
+    Cons _ _ -> return False)
 
   -- |
   -- Yields the head of a monadic list. Relies on 'MonadPlus' instance
   -- to provide a failing implementation of 'fail'.
-  first :: Sharing s => s (s (List s a) -> s a)
-  first = return (\ml -> ml >>= (\l -> case l of
-    --Nil -> mzero
-    Cons x _ -> x ))
+  first :: Sharing s => s (List s a) -> s a
+  first xs = xs >>= (\xs -> case xs of
+    Nil -> mzero
+    Cons x _ -> x)
 
   -- |
   -- Yields the tail of a monadic list. Relies on 'MonadPlus' instance
   -- to provide a failing implementation of 'fail'.
-  rest :: Sharing s => s (s (List s a) -> s (List s a))
-  rest = return (\ml -> ml >>= (\l -> case l of
+  rest :: Sharing s => s (List s a) -> s (List s a)
+  rest xs = xs >>= (\xs -> case xs of
     Nil -> mzero
-    Cons _ xs -> xs ))
+    Cons _ xs -> xs)
   
   -- |
   -- This instance allows to use nested monadic lists as argument to the

@@ -9,8 +9,8 @@ module Sharade.Pair (
 
   data Pair m a b = Pair (m a) (m b)
 
-  mPair :: (Sharing s) => s ((s a) -> s ((s b) -> s (Pair s a b)))
-  mPair = return (\a -> return (\b -> return $ Pair a b))
+  mPair :: (Sharing s) => s a -> s b -> s (Pair s a b)
+  mPair a b = return $ Pair a b
 
   -- |
   -- This instance allows to use nested monadic pairs as argument to the

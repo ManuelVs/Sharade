@@ -100,7 +100,7 @@ module Sharade.Translator.Translator (
     "let " ++ v ++ " = " ++ translateExpr b ++ " in " ++ translateExpr e
 
   translateExpr (Lam x e) =
-    "return (\\" ++ x ++ " -> " ++ translateExpr e ++ ")"
+    "(\\" ++ x ++ " -> " ++ translateExpr e ++ ")"
 
   translateExpr (Fix (Lam _ e)) = translateExpr e
 
@@ -110,7 +110,7 @@ module Sharade.Translator.Translator (
     "_ -> mzero;})"
 
   translateExpr (App le re) =
-    translateExpr le ++ " <#> (" ++ translateExpr re ++ ")"
+    translateExpr le ++ " (" ++ translateExpr re ++ ")"
   
   translateMatch :: Match -> String
   translateMatch (Match (PVar v) e)
@@ -157,14 +157,14 @@ module Sharade.Translator.Translator (
   translateType (TVar (TV v)) = "s " ++ v
   translateType (TCon "Number") = "s Double"
   translateType (TCon v) = "s " ++ v
-  translateType (TArr lt rt) = "s ((" ++ translateType lt ++ ") -> " ++ translateType rt ++ ")"
+  translateType (TArr lt rt) = "(" ++ translateType lt ++ ") -> " ++ translateType rt
   translateType (TList t) = "s (List s (" ++ translateNoMonadType t ++ "))"
   translateType (TPair lt rt) = "s (Pair s (" ++ translateNoMonadType lt ++ ") (" ++ translateNoMonadType rt ++ "))"
 
   translateNoMonadType (TVar (TV v)) = v
   translateNoMonadType (TCon "Number") = "Double"
   translateNoMonadType (TCon v) = v
-  translateNoMonadType (TArr lt rt) = "((" ++ translateType lt ++ ") -> " ++ translateType rt ++ ")"
+  translateNoMonadType (TArr lt rt) = "(" ++ translateType lt ++ ") -> " ++ translateType rt
   translateNoMonadType (TList t) = "(List s (" ++ translateNoMonadType t ++ "))"
   translateNoMonadType (TPair lt rt) = "(Pair s (" ++ translateNoMonadType lt ++ ") (" ++ translateNoMonadType rt ++ "))"
 
