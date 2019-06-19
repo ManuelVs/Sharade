@@ -13,4 +13,4 @@ accept' f s as = case as of
 
 accept f as = accept' f 0 as ;
 
--- results (accept <#> f <#> (convert "ba"))
+-- results (accept f (convert "ba"))
